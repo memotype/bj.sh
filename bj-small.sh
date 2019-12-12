@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # bj.sh is a Bash library for parsing JSON. https://github.com/memotype/bj.sh
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 bj(){ local sre='"(([^\"]|\\.)*)"' bre='[[:space:]]+' wre='[[:space:]]*' j=$1 \
@@ -15,14 +14,3 @@ _bjo "${j:$i}" '[' ']';;esac;if [[ ${j:$i} =~ ^$wre,$wre ]];then ((i+=
 ${#BASH_REMATCH[0]}-1));elif [[ ${j:$i} =~ ^$wre'}'$wre ]];then ((i+=
 ${#BASH_REMATCH[0]}-1));break;fi;if [[ $k = "$q" ]];then break;fi;done;j=$v
 done;unset _bjv _bjo;echo "$v";}
-
-if (( ${#BASH_SOURCE[@]} <= 1 )); then
-  if [[ $1 =~ --? ]]; then
-    shift
-    args=("$(</dev/stdin)" "$@")
-  else
-    args=("$@")
-  fi
-
-  bj "${args[@]}"
-fi

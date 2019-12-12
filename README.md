@@ -11,12 +11,21 @@ the size of the 'jq' binary)
 bj.sh is *NOT* a JSON validator, behavior is undefined if given invalid JSON!
 It will detect some basic JSON errors, but this is not the goal of bj.sh.
 
+The entire parser is implemented as a single bash function, so it can be
+`source`d in to your own script, or you can just copy and paste the function in
+to your script to reduce your external dependencies. `bj-small.sh` is intended
+for exactly this.
+
 Usage:
 
     source bj.sh
     r=$(bj '{"foo": "bar"}' foo)
 
-will set $r to "bar" (without the quotes). If the JSON argument is "-" or "--",
+or
+
+    r=$(./bj.sh '{"foo": "bar"}' foo)
+
+will set $r to "bar" (without the quotes). If the first argument is "-" or "--",
 bj.sh will read from /dev/stdin:
 
     echo '{"foo": [false, true, false]}' | ./bj.sh - foo 1
