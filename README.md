@@ -13,13 +13,13 @@ It will detect some basic JSON errors, but this is not the goal of bj.sh.
 
 Usage:
 
-  source bj.sh
-  r=$(bj '{"foo": "bar"}' foo)
+    source bj.sh
+    r=$(bj '{"foo": "bar"}' foo)
 
 will set $r to "bar" (without the quotes). If the JSON argument is "-" or "--",
 bj.sh will read from /dev/stdin:
 
-  echo '{"foo": [false, true, false]}' | ./bj.sh - foo 1
+    echo '{"foo": [false, true, false]}' | ./bj.sh - foo 1
 
 will echo "true"
 
