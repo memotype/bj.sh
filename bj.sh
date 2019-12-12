@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# bj.sh is a Bash library for parsing JSON.
+# bj.sh is a Bash library for parsing JSON. https://github.com/memotype/bj.sh
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 
 bj() {
-  local sre='"(([^\"]|\\.)*)"' bre='\s\s*' wre='\s*'
+  local sre='"(([^\"]|\\.)*)"' bre='[[:space:]]+' wre='[[:space:]]*'
   local j=$1 v= k= n i q; shift
 
-  _bj_rval() {
+  _bjv() {
     if [[ $1 =~ $2 ]]; then
       v=${BASH_REMATCH[1]}
       ((i+=${#BASH_REMATCH[0]}))
@@ -15,7 +15,7 @@ bj() {
     fi
   }
 
-  _bj_robj() {
+  _bjo() {
     local ol=0 j
     for ((j=0; j<${#1}; j++)); do
       case ${1:$j:1} in
@@ -48,11 +48,11 @@ bj() {
       : "x${j:$i}x"
       : case ${j:$i:1} in
       case ${j:$i:1} in
-        '"') _bj_rval "${j:$i}" "^$sre" ;;
-        [0-9]*) _bj_rval "${j:$i}" '^([0-9]*)' ;;
-        t|f|n) _bj_rval "${j:$i}" '^(true|false|null)' ;;
-        '{') _bj_robj "${j:$i}" '{' '}' ;;
-        '[') _bj_robj "${j:$i}" '[' ']' ;;
+        '"') _bjv "${j:$i}" "^$sre" ;;
+        [0-9]*) _bjv "${j:$i}" '^([0-9]*)' ;;
+        t|f|n) _bjv "${j:$i}" '^(true|false|null)' ;;
+        '{') _bjo "${j:$i}" '{' '}' ;;
+        '[') _bjo "${j:$i}" '[' ']' ;;
       esac
 
       if [[ ${j:$i} =~ ^$wre,$wre ]]; then
@@ -69,7 +69,7 @@ bj() {
     j=$v
   done
 
-  unset _bj_rval _bj_robj
+  unset _bjv _bjo
   echo "$v"
 }
 

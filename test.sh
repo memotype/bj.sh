@@ -5,6 +5,7 @@ fail() {
   exit 1
 }
 
+#. bj.sh
 . bj-small.sh
 
 set -x
@@ -34,6 +35,6 @@ r=$(bj '[false, {"thing": [true, false]}]' 1 thing 0)
 echo "*** $r"
 [[ $r = true ]] || fail
 
-set +x
-time bj "$(< citylots.json)" features 1000
-time bj "$(< citylots.json)" features 413000
+#set +x
+#time bj "$(< citylots.json)" features 1000
+#time bj "$(< citylots.json)" features 413000
