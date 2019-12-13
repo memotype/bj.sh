@@ -3,63 +3,49 @@
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 
 bj() {
-  local sre='"(([^\"]|\\.)*)"' bre='[[:space:]]+' wre='[[:space:]]*'
-  local j=$1 v= k= n i q; shift
+  declare -A bs=(['[']=] ['{']=})
+  local sre='^"(([^\"]|\\.)*)"' gre='[[:space:]]+' wre='[[:space:]]*'
+  local ore='^(\[|\{)' bre='^(true|false|null)' fre="$wre(,|\\}|\$)$wre"
+  local nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?)'
+  local j=$1 v= k= n i q ol l b1 b2
+  shift
 
-  _bjv() {
-    if [[ $1 =~ $2 ]]; then
-      v=${BASH_REMATCH[1]}
-      ((i+=${#BASH_REMATCH[0]}))
-    else
-      return 1
-    fi
-  }
-
-  _bjo() {
-    local ol=0 j
-    for ((j=0; j<${#1}; j++)); do
-      case ${1:$j:1} in
-        $2) ((ol++)) ;;
-        $3)
-          ((ol--))
-          ((ol<1)) && break
-        ;;
-      esac
-    done
-    v=${1:0:$((j+1))}
-    ((i+=${#v}))
-  }
 
   for q in "$@"; do
     n=0
     for ((i=1; i<${#j}; i++)); do
-      if [[ ${j:$i} =~ ^$bre ]]; then
+      if [[ ${j:$i} =~ ^$gre ]]; then
         ((i+=${#BASH_REMATCH[0]}-1))
         continue
       elif [[ ${j:0:1} = '[' ]]; then
         k=$((n++))
-      elif [[ ${j:$i} =~ ^$sre$wre:$wre ]]; then
+      elif [[ ${j:$i} =~ $sre$wre:$wre ]]; then
         k=${BASH_REMATCH[1]}
         ((i+=${#BASH_REMATCH[0]}))
       else
         return 1
       fi
 
-      : "x${j:$i}x"
-      : case ${j:$i:1} in
-      case ${j:$i:1} in
-        '"') _bjv "${j:$i}" "^$sre" ;;
-        [0-9]*) _bjv "${j:$i}" '^([0-9]*)' ;;
-        t|f|n) _bjv "${j:$i}" '^(true|false|null)' ;;
-        '{') _bjo "${j:$i}" '{' '}' ;;
-        '[') _bjo "${j:$i}" '[' ']' ;;
-      esac
+      if [[ ${j:$i} =~ $sre || ${j:$i} =~ $nre || ${j:$i} =~ $bre ]]; then
+        v=${BASH_REMATCH[1]}
+        ((i+=${#BASH_REMATCH[0]}))
+      elif [[ ${j:$i:1} =~ $ore ]]; then
+        ol=0 b1=${BASH_REMATCH[1]} b2=${bs[$b1]}
+        for ((l="$i"; l<"${#j}"; l++)); do
+          case ${j:$l:1} in
+            $b1) ((ol++)) ;;
+            $b2)
+              ((ol--))
+              ((ol<1)) && break
+            ;;
+          esac
+        done
+        v=${j:$i:$((l-i+1))}
+        ((i+=${#v}))
+      fi
 
-      if [[ ${j:$i} =~ ^$wre,$wre ]]; then
+      if [[ ${j:$i} =~ ^$fre ]]; then
         ((i+=${#BASH_REMATCH[0]}-1))
-      elif [[ ${j:$i} =~ ^$wre'}'$wre ]]; then
-        ((i+=${#BASH_REMATCH[0]}-1))
-        break
       fi
 
       if [[ $k = "$q" ]]; then
@@ -69,7 +55,6 @@ bj() {
     j=$v
   done
 
-  unset _bjv _bjo
   echo "$v"
 }
 
