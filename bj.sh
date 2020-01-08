@@ -13,12 +13,12 @@ bj() {
   # i="json string pointer" q="query key" ol="object level/depth"
   # l="object parsing pointer" b1="open bracket [/{" b2="closing bracket ]/}"
   # x="the value we're looking for (x marks the spot)" c="return code"
-  local j=$1 v= k= n i q ol l b1 b2 x c=1
+  local j=$1 v= k= n i q ol l b1 b2 x c
   shift
 
   # Drill down based on query arguments
   for q in "$@"; do
-    n=0 x=
+    n=0 x= c=1
 
     # Scan characters in current JSON sub-string
     for ((i=1; i<${#j}; i++)); do

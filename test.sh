@@ -6,6 +6,7 @@ fail() {
 }
 
 src=${1:-bj.sh}
+echo "Testing $src"
 . "$src"
 
 #set -x
@@ -43,6 +44,9 @@ runtest true '[false, {"thing": [true, false]}]' 1 thing 0
 
 # Array out of bounds test
 runtest '' '[0, 1, 2, 3]' 4 \
+  && fail "bj didn't set exit code for array index out-of-bounds: $?"
+
+runtest '' '{"a": [0, 1, 2, 3]}' a 4 \
   && fail "bj didn't set exit code for array index out-of-bounds: $?"
 
 runtest 11 '{"a": [0, 1, 2], "b": [10, 11, 12]}' b 1 \
