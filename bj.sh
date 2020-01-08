@@ -5,14 +5,14 @@
 bj() {
   # Matching brackets
   declare -A bs=(['[']=] ['{']=})
-  # Define regexes in variables because quoting is weird in [[ =-~ ]]
+  # Define regexes in variables because quoting is tricky in [[ =~ ]]
   local sre='^"(([^\"]|\\.)*)"' gre='[[:space:]]+' wre='[[:space:]]*'
   local ore='^(\[|\{)' bre='^(true|false|null)' fre="$wre(,|\\}|\$)$wre"
   local nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?)'
-  # j="json string" v="json value" k="json key" n="array index"
+  # j="json string" v="json value" k="json key" n="json array index"
   # i="json string pointer" q="query key" ol="object level/depth"
   # l="object parsing pointer" b1="open bracket [/{" b2="closing bracket ]/}"
-  # x="the value we're looking for (x marks the spot) c="return code"
+  # x="the value we're looking for (x marks the spot)" c="return code"
   local j=$1 v= k= n i q ol l b1 b2 x c=1
   shift
 
