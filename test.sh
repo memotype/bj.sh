@@ -5,8 +5,8 @@ fail() {
   exit 1
 }
 
-#. bj.sh
-. bj-small.sh
+src=${1:-bj.sh}
+. "$src"
 
 #set -x
 
@@ -30,7 +30,6 @@ r=$(bj '{"a": {"b": {"c" : ["d" , "e"] , "e" : [ "f" , "g" ] } } ,
 [1, 2, 3] } }' a b e 1)
 echo "*** $r"
 [[ $r = g ]] || fail
-#exit
 
 r=$(bj '[false, {"thing": [true, false]}]' 1 thing 0)
 echo "*** $r"

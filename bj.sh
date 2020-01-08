@@ -30,7 +30,9 @@ bj() {
         v=${BASH_REMATCH[1]}
         ((i+=${#BASH_REMATCH[0]}))
       elif [[ ${j:$i:1} =~ $ore ]]; then
-        ol=0 b1=${BASH_REMATCH[1]} b2=${bs[$b1]}
+        ol=0
+        b1=${BASH_REMATCH[1]}
+        b2=${bs[$b1]}
         for ((l="$i"; l<"${#j}"; l++)); do
           case ${j:$l:1} in
             $b1) ((ol++)) ;;
@@ -57,6 +59,8 @@ bj() {
 
   echo "$v"
 }
+
+: ENDBJ
 
 if (( ${#BASH_SOURCE[@]} <= 1 )); then
   if [[ $1 =~ --? ]]; then
