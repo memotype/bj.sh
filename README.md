@@ -13,8 +13,8 @@ It will detect some basic JSON errors, but this is not the goal of bj.sh.
 
 The entire parser is implemented as a single bash function, so it can be
 `source`d in to your own script, or you can just copy and paste the function in
-to your script to reduce your external dependencies. `bj-small.sh` is intended
-for exactly this.
+to your script to reduce your external dependencies. `bj-80x15.sh`
+(80-characters lines, 15 lines long) and `bj-90x13.sh` are intended for exactly this.
 
 Usage:
 
@@ -25,8 +25,17 @@ or
 
     r=$(./bj.sh '{"foo": "bar"}' foo)
 
-will set $r to "bar" (without the quotes). If the first argument is "-" or "--",
-bj.sh will read from /dev/stdin:
+will set $r to "bar" (without the quotes).
+
+Multiple levels of JSON keys can be queried at once, i.e:
+
+    source bj.sh
+    json='{"a": {"foo": "bar"}, "b": [27, 42]}'
+    bj "$json" a foo  # output: bar
+    bj "$json" b 1    # output: 42
+
+When run as a separate script, if the first argument is "-" or "--", bj.sh will
+read from /dev/stdin:
 
     echo '{"foo": [false, true, false]}' | ./bj.sh - foo 1
 
