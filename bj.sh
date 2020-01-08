@@ -3,36 +3,59 @@
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 
 bj() {
+  # Matching brackets
   declare -A bs=(['[']=] ['{']=})
+  # Define regexes in variables because quoting is weird in [[ =-~ ]]
   local sre='^"(([^\"]|\\.)*)"' gre='[[:space:]]+' wre='[[:space:]]*'
   local ore='^(\[|\{)' bre='^(true|false|null)' fre="$wre(,|\\}|\$)$wre"
   local nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?)'
-  local j=$1 v= k= n i q ol l b1 b2
+  # j="json string" v="json value" k="json key" n="array index"
+  # i="json string pointer" q="query key" ol="object level/depth"
+  # l="object parsing pointer" b1="open bracket [/{" b2="closing bracket ]/}"
+  # x="the value we're looking for (x marks the spot) c="return code"
+  local j=$1 v= k= n i q ol l b1 b2 x c=1
   shift
 
-
+  # Drill down based on query arguments
   for q in "$@"; do
-    n=0
+    n=0 x=
+
+    # Scan characters in current JSON sub-string
     for ((i=1; i<${#j}; i++)); do
+
+      # Skip whitespace
       if [[ ${j:$i} =~ ^$gre ]]; then
         ((i+=${#BASH_REMATCH[0]}-1))
         continue
+
+      ### Parse (k)ey
+      # If beginning of current value is a list, set 'k' to list index
       elif [[ ${j:0:1} = '[' ]]; then
         k=$((n++))
+
+      # Otherwise, set 'k' to object key
       elif [[ ${j:$i} =~ $sre$wre:$wre ]]; then
         k=${BASH_REMATCH[1]}
         ((i+=${#BASH_REMATCH[0]}))
+
+      # JSON syntax error
       else
         return 1
       fi
 
+      ### Parse (v)alue
+      # String, number or boolean
       if [[ ${j:$i} =~ $sre || ${j:$i} =~ $nre || ${j:$i} =~ $bre ]]; then
         v=${BASH_REMATCH[1]}
+        # Scan ahead for next item
         ((i+=${#BASH_REMATCH[0]}))
+
+      # Object/dict or list
       elif [[ ${j:$i:1} =~ $ore ]]; then
         ol=0
         b1=${BASH_REMATCH[1]}
         b2=${bs[$b1]}
+        # Looking for matching '}' or ']'
         for ((l="$i"; l<"${#j}"; l++)); do
           case ${j:$l:1} in
             $b1) ((ol++)) ;;
@@ -46,18 +69,22 @@ bj() {
         ((i+=${#v}))
       fi
 
+      ### Check if we found the query item
+      if [[ $k = "$q" ]]; then
+        x=$v c=0
+        break
+      fi
+
+      # Skip field seperator
       if [[ ${j:$i} =~ ^$fre ]]; then
         ((i+=${#BASH_REMATCH[0]}-1))
       fi
-
-      if [[ $k = "$q" ]]; then
-        break
-      fi
     done
-    j=$v
+    j=$x
   done
 
-  echo "$v"
+  echo "$x"
+  return "$c"
 }
 
 : ENDBJ

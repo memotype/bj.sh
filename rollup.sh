@@ -77,7 +77,7 @@ for str_id in "${!strings[@]}"; do
 done
 
 outfile=${2:-/dev/stdout}
-echo "# bj.sh is a Bash library for parsing JSON. https://github.com/memotype/bj.sh
-# Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license" \
+echo "# (C) Isaac Freeman (memotype@gmail.com)." \
+  "See https://github.com/memotype/bj.sh" \
   >"$outfile"
 echo "$script" >>"$outfile"
