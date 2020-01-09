@@ -9,7 +9,7 @@ bj() {
   local gre='^[[:space:]]+(.*)' wre='[[:space:]]*' ore='^(\[|\{)' \
     xre='([eE][+-]?[0-9]+)?)'
   local sre=^$wre'"(([^\"]|\\.)*)"' bre="^$wre(true|false|null)" \
-    fre="$wre(,|\\}|\$)$wre" nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?'$xre
+    fre=$wre'(,|\}|$)'$wre nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?'$xre
   # j="json string" v="json value" k="json key" n="json array index"
   # i="json string pointer" q="query key" ol="object level/depth"
   # l="object parsing pointer" b1="open bracket [/{" b2="closing bracket ]/}"
@@ -76,11 +76,9 @@ bj() {
       fi
 
       # Skip field seperator
-      if [[ ${j:$i} =~ ^$fre ]]; then
-        ((i+=${#BASH_REMATCH[0]}-1))
-      fi
+      [[ ${j:$i} =~ ^$fre ]] \
+        && ((i+=${#BASH_REMATCH[0]}-1))
     done
-    : 'j=$x'
     j=$x
   done
 

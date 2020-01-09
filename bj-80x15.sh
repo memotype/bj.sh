@@ -11,5 +11,5 @@ then v=${BASH_REMATCH[1]};((i+=${#BASH_REMATCH[0]}));elif [[ ${j:$i} =~ $ore ]]
 then ol=0;b1=${BASH_REMATCH[1]};b2=${bs[$b1]};for ((l="$i";l<"${#j}";l++));do
 case ${j:$l:1} in $b1)((ol++));;$b2)((ol--));((ol<1))&&break;;esac;done;v=${\
 j:$i:$((l-i+1))};((i+=${#v}));fi;if [[ $k = "$q" ]];then x=$v c=0;break;fi;if [[
-${j:$i} =~ ^$fre ]];then ((i+=${#BASH_REMATCH[0]}-1));fi;done;: 'j=$x';j=$x;done
-echo "$x";return "$c";}
+${j:$i} =~ ^$fre ]];then ((i+=${#BASH_REMATCH[0]}-1));fi;done;j=$x;done;echo \
+"$x";return "$c";}
