@@ -6,9 +6,10 @@ bj() {
   # Matching brackets
   declare -A bs=(['[']=] ['{']=})
   # Define regexes in variables because quoting is tricky in [[ =~ ]]
-  local sre='^"(([^\"]|\\.)*)"' gre='[[:space:]]+' wre='[[:space:]]*'
-  local ore='^(\[|\{)' bre='^(true|false|null)' fre="$wre(,|\\}|\$)$wre"
-  local nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?)'
+  local gre='^[[:space:]]+(.*)' wre='[[:space:]]*' ore='^(\[|\{)' \
+    xre='([eE][+-]?[0-9]+)?)'
+  local sre=^$wre'"(([^\"]|\\.)*)"' bre="^$wre(true|false|null)" \
+    fre="$wre(,|\\}|\$)$wre" nre='^(-?(0|[1-9][0-9]*)(\.[0-9]+)?'$xre
   # j="json string" v="json value" k="json key" n="json array index"
   # i="json string pointer" q="query key" ol="object level/depth"
   # l="object parsing pointer" b1="open bracket [/{" b2="closing bracket ]/}"
@@ -20,17 +21,16 @@ bj() {
   for q in "$@"; do
     n=0 x= c=1
 
+    # Trim leading whitespace
+    [[ ${j:$i} =~ $gre ]] \
+      && j=${BASH_REMATCH[1]}
+
     # Scan characters in current JSON sub-string
     for ((i=1; i<${#j}; i++)); do
 
-      # Skip whitespace
-      if [[ ${j:$i} =~ ^$gre ]]; then
-        ((i+=${#BASH_REMATCH[0]}-1))
-        continue
-
       ### Parse (k)ey
       # If beginning of current value is a list, set 'k' to list index
-      elif [[ ${j:0:1} = '[' ]]; then
+      if [[ ${j:0:1} = '[' ]]; then
         k=$((n++))
 
       # Otherwise, set 'k' to object key
@@ -51,7 +51,7 @@ bj() {
         ((i+=${#BASH_REMATCH[0]}))
 
       # Object/dict or list
-      elif [[ ${j:$i:1} =~ $ore ]]; then
+      elif [[ ${j:$i} =~ $ore ]]; then
         ol=0
         b1=${BASH_REMATCH[1]}
         b2=${bs[$b1]}
@@ -80,6 +80,7 @@ bj() {
         ((i+=${#BASH_REMATCH[0]}-1))
       fi
     done
+    : 'j=$x'
     j=$x
   done
 
