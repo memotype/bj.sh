@@ -56,11 +56,28 @@ runtest 11 '{"a": [0, 1, 2], "b": [10, 11, 12]}' b 1 \
   || fail "bad exit code after valid array index query: $?"
 
 # Nested array tests
-runtest 4 '{"a": [0, 1, [2, [3, 4]]]}' a 2 1 1
+runtest 4 '{"a": [[0, 42], 1, [2, [3, 4]]]}' a 2 1 1
 
 # Numbers tests
 runtest "4.2e10" '[0, -1, 4.2e10]' 2
 runtest "-1" '[0, -1, 4.2e10]' 1
+
+# Array iteration test
+#set -x
+echo '*** {"a": [42, 69, 420]} a $i (iterate)'
+j='{"a": [42, 69, 420]}'
+i=0
+s=()
+while r=$(bj "$j" a $i); do
+  s=("$r" "${s[@]}")
+  ((i++))
+done
+
+if [[ "${s[@]}" = "420 69 42" ]]; then
+  echo pass
+else
+  fail "'${s[@]}' != '420 69 42'"
+fi
 
 #set +x
 #time bj "$(< citylots.json)" features 1000
