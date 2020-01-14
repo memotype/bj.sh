@@ -40,7 +40,7 @@ bj() {
 
       # JSON syntax error
       else
-        return 1
+        return 2
       fi
 
       ### Parse (v)alue
