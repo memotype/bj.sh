@@ -46,7 +46,7 @@ arrays:
 
     json='{"a": [42, 69, 420]}'
     i=0
-    while r=$(bj "$j" a $i); do
+    while r=$(bj "$json" a $i); do
         echo "$r"
         ((i++))
     done
