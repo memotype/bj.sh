@@ -18,7 +18,7 @@ bj() {
   shift
 
   # Drill down based on query arguments
-  for q in "$@"; do
+  for q; do
     n=0 x= c=1
 
     # Trim leading whitespace
