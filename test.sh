@@ -5,6 +5,11 @@ fail() {
   exit 1
 }
 
+if [[ $1 = '-t' ]]; then
+  timetest=1
+  shift
+fi
+
 src=${1:-bj.sh}
 echo "Testing $src"
 . "$src"
@@ -20,7 +25,7 @@ runtest() {
   local r
   r=$(bj "$@")
   c=$?
-  echo "r=$r"
+  echo "c=$c r=$r"
   if [[ $r = "$ans" ]]; then
     echo "pass"
   else
@@ -32,6 +37,10 @@ runtest() {
 runtest bar '{"foo": "bar"}' foo || fail "bj exit code: $?"
 
 runtest '{"bar": [1, 2, 3]}' '{"a": "b", "foo": {"bar": [1, 2, 3]}}' foo
+
+runtest 'baz' \
+  '{"a": {"b": "c"}, "d": {"e": {"f": "g"}, "h": "i"}, "foo": {"bar": "baz"}}' \
+  foo bar
 
 runtest -2 '{"a": {"b": {"c" : ["d" , "e"]} } ,
 "foo" : {"bar": [1.0, -2, 3e45] } }' foo bar 1
@@ -57,6 +66,7 @@ runtest 11 '{"a": [0, 1, 2], "b": [10, 11, 12]}' b 1 \
 
 # Nested array tests
 runtest 4 '{"a": [[0, 42], 1, [2, [3, 4]]]}' a 2 1 1
+runtest i '[{"b": "c", "e": {"f": "g"}}, {"h": "i"}]' 1 h
 
 # Numbers tests
 runtest "4.2e10" '[0, -1, 4.2e10]' 2
@@ -73,12 +83,21 @@ while r=$(bj "$j" a $i); do
   ((i++))
 done
 
-if [[ "${s[@]}" = "420 69 42" ]]; then
-  echo pass
-else
-  fail "'${s[@]}' != '420 69 42'"
-fi
+# Closing brackets in strings test
+runtest 'baz' '{"foo": {"b}ar": "baz"}}' foo 'b}ar' \
+  || fail "Wrongly detected closing bracket inside string"
+runtest 'b}az' '{"foo": {"bar": "b}az"}}' foo 'bar' \
+  || fail "Wrongly detected closing bracket inside string"
 
-#set +x
-#time bj "$(< citylots.json)" features 1000
-#time bj "$(< citylots.json)" features 413000
+if (( timetest )); then
+  set +x
+  echo '*** time r=$(bj "$(< citylots.json)" features 1000 geometry coordinates 0 0 1)'
+  time r=$(bj "$(< citylots.json)" features 1000 geometry coordinates 0 0 1)
+  echo 'r=$r'
+  if [[ $r = 37.805335380794915 ]]; then
+    echo pass
+  else
+    echo "FAIL: $r != 37.805335380794915"
+  fi
+  #time bj "$(< citylots.json)" features 413000
+fi
