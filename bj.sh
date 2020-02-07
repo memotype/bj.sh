@@ -36,8 +36,9 @@ bj() (
     : : "=== st()"
     o=()
     while rd; do
+      : : "--- lc=$l$c="
       case "$l$c" in
-        \\?) o+=("$c") ;;
+        \\?) o+=("$c"); c=c ;;
         ?\\) : ;;
         ?\") break ;;
         *) o+=("$c") ;;
@@ -67,7 +68,6 @@ bj() (
         \") [[ $q ]] && { st; k=$(pr); } ;;
         # Found the key, just return and let the main loop parse from here
         :) [[ $q && $k = "$q" ]] && return ;;
-        ,) k= ;;
       esac
     done
   }

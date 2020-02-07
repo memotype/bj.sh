@@ -89,8 +89,9 @@ runtest 'baz' '{"foo": {"b}ar": "baz"}}' foo 'b}ar' \
 runtest 'b}az' '{"foo": {"bar": "b}az"}}' foo 'bar' \
   || fail "Wrongly detected closing bracket inside string"
 
-# Escaped quote in string test
+# Escapes in string test
 runtest '"foo" bar' '{"a": "\"", "foo": "\"foo\" bar"}' foo
+runtest '\foo\ bar' '{"a": "\\", "foo": "\\foo\\ bar"}' foo
 
 if (( timetest )); then
   set +x
