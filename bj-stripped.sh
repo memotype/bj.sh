@@ -1,39 +1,18 @@
 #!/usr/bin/env bash
 # bj.sh is a Bash library for parsing JSON. https://github.com/memotype/bj.sh
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
-
 bj() (
-  # If $1 is - or --, just read from stdin, otherwise we push $1 to stdin.
-  # The JSON value is read as a stream of characters from stdin.
   [[ $1 =~ ^--?$ ]] || exec <<<"$1"
   shift
-
-  # Some of global variables used:
-  # q="the current query parameter we're looking for"
-  # c="the current character" l="the previous value of $c"
-  # o="array of 'output' characters, to be joined later (array append + printf
-  # is faster than appending to a string one character at a time)"
-
-  # c needs to be initialized because we do l=$c before our first read
   c=
-
-  # Read a character
   rd() {
     l=$c
     IFS= read -rd '' -n1 c
   }
-
-  # Join the characters in the $o array
   pr() {
-    # Using ':' with arguments is nice for 'bash -x' debugging
-    : : "=== pr()"
     printf "%s" "${o[@]}"
   }
-
-
-  # Scan strings and optionally save them to $o array if $1 is set
   st() {
-    : : "=== st()"
     o=()
     while rd; do
       case "$l$c" in
@@ -44,16 +23,10 @@ bj() (
       esac
     done
   }
-
-  # Scan an object
   ob() {
-    : : "=== ob()"
     bl=1
     while rd; do
-      : : "--- l=$l= c=$c= q=$q= ---"
       [[ ! $q ]] && o+=("$l")
-      # We match on $b1 and $c so the action can depend if we're processing an
-      # array or an object
       case "$c" in
         {) ((bl++)) ;;
         \})
@@ -65,22 +38,18 @@ bj() (
           }
         ;;
         \") [[ $q ]] && { st 1; k=$(pr); } ;;
-        # Found the key, just return and let the main loop parse from here
         :) [[ $q && $k = "$q" ]] && return ;;
         ,) k= ;;
       esac
     done
   }
-
   lt() {
-    : : "=== lt()"
     [[ $q = 0 ]] && return
     n=0 bl=1
     while rd; do
-      : : "--- l=$l= c=$c= q=$q= bl=$bl= ---"
       [[ ! $q ]] && o+=("$l")
       case "$bl$c" in
-        ?[|?{) ((bl++)) ;; # ]) <- fix vim syntax
+        ?[|?{) ((bl++)) ;;
         ?}) ((bl--)) ;;
         ?])
           ((bl--))
@@ -97,10 +66,7 @@ bj() (
       esac
     done
   }
-
-  # Numeric parsing
   nm() {
-    : : "=== nm()"
     o=()
     while
       rd \
@@ -108,9 +74,7 @@ bj() (
         && [[ $c =~ [-0-9\.eE\+] ]]
     do :;done
   }
-
   tf() {
-    : : "=== tf()"
     o=()
     while
       rd \
@@ -118,37 +82,25 @@ bj() (
         && [[ $c =~ [a-z] ]]
     do :; done
   }
-
-  # Main - scan input for query terms
   for q in "$@" ""; do
-    # x="exit code"
     [[ $q ]] && x=1
-    : : "--- q=$q"
     f= o=()
     while rd; do
-      : : "mn --- l=$l c=$c"
       case $c in
         [[:space:]]) : ;;
         \") st 1; f=1 ;;
         t|f|n) tf; f=1 ;;
         -|[0-9]) nm; f=1 ;;
         {) ob && f=1 ;;
-        [) lt && f=1 ;; #])
+        [) lt && f=1 ;;
         *) return 2 ;;
       esac
-      # If we (f)ound our key, go to the next
       [[ $f ]] && { x=0; break; }
     done
   done
-
-  # Print whatever we last stored in $o
   pr
-
   return $x
 )
-
-: ENDBJ
-
 if ((${#BASH_SOURCE[@]}<=1)) && ! [[ $- =~ i ]]; then
   bj "$@"
   c=$?

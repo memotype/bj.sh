@@ -1,7 +1,4 @@
 bj.sh is a pure GNU Bash library for parsing JSON data.
-Copyright Isaac Freeman (memotype@gmail.com)
-
-Licensed under the MIT license. See LICENSING.
 
 bj.sh is meant to be run as a script, sourced as a library, or copied directly
 in to your script for maximum flexibility. Great for embedded systems, build
@@ -13,48 +10,47 @@ It will detect some basic JSON errors, but this is not the goal of bj.sh.
 
 The entire parser is implemented as a single bash function, so it can be
 `source`d in to your own script, or you can just copy and paste the function in
-to your script to reduce your external dependencies. `bj-80x14.sh`
-(80-character lines, 14 lines long) and `bj-90x13.sh` (90-character lines, 13
-lines long) versions are intended for exactly this.
+to your script to reduce your external dependencies. `bj-80x.sh` (80-character
+lines, 14 lines long) and `bj-90x.sh` (90-character lines, 12 lines long)
+versions are intended for exactly this.
 
-Usage:
+### Usage
 
-    source bj.sh
-    r=$(bj '{"foo": "bar"}' foo)
+Called as an external script:
 
-or
+    bj.sh [DATA] [QUERY ...]
 
-    r=$(./bj.sh '{"foo": "bar"}' foo)
 
-will set $r to "bar" (without the quotes).
-
-Multiple levels of JSON keys can be queried at once, i.e:
+Sourced or copied in to your script:
 
     source bj.sh
-    json='{"a": {"foo": {"bar": "baz"}}, "b": [27, 42]}'
-    bj "$json" a foo bar  # output: baz
-    bj "$json" b 1        # output: 42
+    bj [DATA] [QUERY ...]
 
-bj.sh will also return JSON if the value at the query location isn't a leaf node
+DATA can be a JSON string, or - or --. If DATA is - or --, JSON data is read
+from stdin.
 
-    json='{"a": {"foo": {"bar": "baz"}}, "b": [27, 42]}'
-    bj "$json" a foo      # output: {"bar": "baz"}
+QUERY terms are the keys and indexes you want to query from the JSON data.
 
-The exit code (`$?`) will be 1 if any of the query items weren't found, and 2 if
-there was an error parsing the JSON. This can also be useful for iterating over
-arrays:
+### Examples
 
-    json='{"a": [42, 69, 420]}'
+    source bj.sh
+    r=$(bj '{"foo": {"bar": "baz"}}' foo bar)
+
+`r` will be set to the string `baz`.
+
+    r=$(curl https://myapi.example.com/api/call | bj - nodes 0)
+
+Assuming the api call returns something like `{"nodes": ["node0", "node1"]}`,
+this will set `r` to `node0`. To get the list of nodes and iterate over them:
+
+    nodes=$(curl https://myapi.example.com/api/call | bj - nodes)
     i=0
-    while r=$(bj "$json" a $i); do
-        echo "$r"
-        ((i++))
+    while node=$(bj "$nodes" "$i"); do
+        ping -c1 "$node"
+        (( i++ ))
     done
 
-When run as a separate script, if the first argument is "-" or "--", bj.sh will
-read from /dev/stdin:
-
-    echo '{"foo": [false, true, false]}' | ./bj.sh - foo 1
-
-will echo "true"
-
+`bj` will return the JSON data at the key if it's not a leaf node, so the first
+call returns `["node0", "node1"]`. Also, `bj` will exit with a code of 1 if the
+queried key or index doesn't exist. So, when `$i` is `2`, `bj` will return 1,
+breaking out of the `while` loop.

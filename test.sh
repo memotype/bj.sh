@@ -93,7 +93,16 @@ if (( timetest )); then
   set +x
   echo '*** time r=$(bj "$(< citylots.json)" features 1000 geometry coordinates 0 0 1)'
   time r=$(bj "$(< citylots.json)" features 1000 geometry coordinates 0 0 1)
-  echo 'r=$r'
+  echo "r=$r"
+  if [[ $r = 37.805335380794915 ]]; then
+    echo pass
+  else
+    echo "FAIL: $r != 37.805335380794915"
+  fi
+
+  echo '*** time r=$(bj - features 1000 geometry coordinates 0 0 1 <citylots.json)'
+  time r=$(bj - features 1000 geometry coordinates 0 0 1 <citylots.json)
+  echo "r=$r"
   if [[ $r = 37.805335380794915 ]]; then
     echo pass
   else
