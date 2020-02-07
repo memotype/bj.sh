@@ -2,7 +2,7 @@
 # bj.sh is a Bash library for parsing JSON. https://github.com/memotype/bj.sh
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 bj() (
-  [[ $1 =~ ^--?$ ]] || exec <<<"$1"
+  [[ $1 = - ]] || exec <<<"$1"
   shift
   c=
   rd() {
@@ -37,7 +37,7 @@ bj() (
             break
           }
         ;;
-        \") [[ $q ]] && { st 1; k=$(pr); } ;;
+        \") [[ $q ]] && { st; k=$(pr); } ;;
         :) [[ $q && $k = "$q" ]] && return ;;
         ,) k= ;;
       esac
@@ -88,7 +88,7 @@ bj() (
     while rd; do
       case $c in
         [[:space:]]) : ;;
-        \") st 1; f=1 ;;
+        \") st; f=1 ;;
         t|f|n) tf; f=1 ;;
         -|[0-9]) nm; f=1 ;;
         {) ob && f=1 ;;

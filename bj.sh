@@ -3,9 +3,9 @@
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 
 bj() (
-  # If $1 is - or --, just read from stdin, otherwise we push $1 to stdin.
+  # If $1 is -, just read from stdin, otherwise we push $1 to stdin.
   # The JSON value is read as a stream of characters from stdin.
-  [[ $1 =~ ^--?$ ]] || exec <<<"$1"
+  [[ $1 = - ]] || exec <<<"$1"
   shift
 
   # Some of global variables used:
@@ -31,7 +31,7 @@ bj() (
   }
 
 
-  # Scan strings and optionally save them to $o array if $1 is set
+  # Scan strings and save them to $o array
   st() {
     : : "=== st()"
     o=()
@@ -64,7 +64,7 @@ bj() (
             break
           }
         ;;
-        \") [[ $q ]] && { st 1; k=$(pr); } ;;
+        \") [[ $q ]] && { st; k=$(pr); } ;;
         # Found the key, just return and let the main loop parse from here
         :) [[ $q && $k = "$q" ]] && return ;;
         ,) k= ;;
@@ -129,7 +129,7 @@ bj() (
       : : "mn --- l=$l c=$c"
       case $c in
         [[:space:]]) : ;;
-        \") st 1; f=1 ;;
+        \") st; f=1 ;;
         t|f|n) tf; f=1 ;;
         -|[0-9]) nm; f=1 ;;
         {) ob && f=1 ;;

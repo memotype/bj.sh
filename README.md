@@ -11,7 +11,7 @@ It will detect some basic JSON errors, but this is not the goal of bj.sh.
 The entire parser is implemented as a single bash function, so it can be
 `source`d in to your own script, or you can just copy and paste the function in
 to your script to reduce your external dependencies. `bj-80x14.sh` (80-character
-lines, 14 lines long) and `bj-90x13.sh` (90-character lines, 13 lines long)
+lines, 14 lines long) and `bj-90x12.sh` (90-character lines, 12 lines long)
 versions are intended for exactly this.
 
 ### Usage
@@ -26,7 +26,7 @@ Sourced or copied in to your script:
     source bj.sh
     bj [DATA] [QUERY ...]
 
-DATA can be a JSON string, or - or --. If DATA is - or --, JSON data is read
+DATA can be a JSON string, or `-`. If DATA is `-`, JSON data is read
 from stdin.
 
 QUERY terms are the keys and indexes you want to query from the JSON data.
