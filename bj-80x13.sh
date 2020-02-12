@@ -7,8 +7,7 @@ eturn 1;o+=(});break;};;\")[[ $q ]]&&{ st;k=$(pr);};;:)[[ $q&&$k = "$q" ]]&&ret\
 urn;;esac;done;};lt(){ [[ $q = 0 ]]&&return;n=0 bl=1;while rd;do [[ ! $q ]]&&o+\
 =("$l");case "$bl$c" in ?[|?{)((bl++));;?})((bl--));;?])((bl--));[[ $bl = 0 ]]&\
 &{ [[ $q ]]&&return 1;o+=(]);break;};;1,)((n++));[[ $n = "$q" ]]&&break;;esac;d\
-one;};nm(){ o=();while rd&&o+=("$l")&&[[ $c =~ [-0-9\.eE\+] ]];do :;done;};tf(){
-o=();while rd&&o+=("$l")&&[[ $c =~ [a-z] ]];do :;done;};for q in "$@" "";do [[ \
-$q ]]&&x=1;f= o=();while rd;do case $c in [[:space:]]):;;\")st;f=1;;t|f|n)tf;f=\
-1;;-|[0-9])nm;f=1;;{)ob&&f=1;;[)lt&&f=1;;*)return 2;;esac;[[ $f ]]&&{ x=0;break
-};done;done;pr;return $x;)
+one;};vl(){ o=();while rd&&o+=("$l")&&[[ $c =~ $1 ]];do :;done;};for q in "$@" \
+"";do [[ $q ]]&&x=1;f= o=();while rd;do case $c in [[:space:]]):;;\")st;f=1;;t|\
+f|n)vl "[a-z]";f=1;;-|[0-9])vl "[-0-9\.eE]";f=1;;{)ob&&f=1;;[)lt&&f=1;;*)retur\
+n 2;;esac;[[ $f ]]&&{ x=0;break;};done;done;pr;return $x;)

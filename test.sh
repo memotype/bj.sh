@@ -112,5 +112,7 @@ if (( timetest )); then
   else
     echo "FAIL: $r != 37.805335380794915"
   fi
-  #time bj "$(< citylots.json)" features 413000
+  
+  time bj - features 413000 <citylots.json
+  time jq '.features[413000]' <citylots.json
 fi

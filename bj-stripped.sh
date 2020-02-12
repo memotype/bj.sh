@@ -65,21 +65,13 @@ bj() (
       esac
     done
   }
-  nm() {
+  vl() {
     o=()
     while
       rd \
         && o+=("$l") \
-        && [[ $c =~ [-0-9\.eE\+] ]]
+        && [[ $c =~ $1 ]]
     do :;done
-  }
-  tf() {
-    o=()
-    while
-      rd \
-        && o+=("$l") \
-        && [[ $c =~ [a-z] ]]
-    do :; done
   }
   for q in "$@" ""; do
     [[ $q ]] && x=1
@@ -88,8 +80,8 @@ bj() (
       case $c in
         [[:space:]]) : ;;
         \") st; f=1 ;;
-        t|f|n) tf; f=1 ;;
-        -|[0-9]) nm; f=1 ;;
+        t|f|n) vl "[a-z]"; f=1 ;;
+        -|[0-9]) vl "[-0-9\.eE\+]"; f=1 ;;
         {) ob && f=1 ;;
         [) lt && f=1 ;;
         *) return 2 ;;

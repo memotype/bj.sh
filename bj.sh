@@ -53,8 +53,6 @@ bj() (
     while rd; do
       : : "--- l=$l= c=$c= q=$q= ---"
       [[ ! $q ]] && o+=("$l")
-      # We match on $b1 and $c so the action can depend if we're processing an
-      # array or an object
       case "$c" in
         {) ((bl++)) ;;
         \})
@@ -98,25 +96,15 @@ bj() (
     done
   }
 
-  # Numeric parsing
-  nm() {
-    : : "=== nm()"
+  # Simple value parsing (numbers, true/false, etc)
+  vl() {
+    : : "=== vl() $1"
     o=()
     while
       rd \
         && o+=("$l") \
-        && [[ $c =~ [-0-9\.eE\+] ]]
+        && [[ $c =~ $1 ]]
     do :;done
-  }
-
-  tf() {
-    : : "=== tf()"
-    o=()
-    while
-      rd \
-        && o+=("$l") \
-        && [[ $c =~ [a-z] ]]
-    do :; done
   }
 
   # Main - scan input for query terms
@@ -130,8 +118,8 @@ bj() (
       case $c in
         [[:space:]]) : ;;
         \") st; f=1 ;;
-        t|f|n) tf; f=1 ;;
-        -|[0-9]) nm; f=1 ;;
+        t|f|n) vl "[a-z]"; f=1 ;;
+        -|[0-9]) vl "[-0-9\.eE\+]"; f=1 ;;
         {) ob && f=1 ;;
         [) lt && f=1 ;; #])
         *) return 2 ;;
@@ -148,7 +136,7 @@ bj() (
 )
 
 : ENDBJ
-
+  
 if ((${#BASH_SOURCE[@]}<=1)) && ! [[ $- =~ i ]]; then
   bj "$@"
   c=$?
