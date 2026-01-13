@@ -1,1 +1,1 @@
-bj-80x13.sh
+bj-80-col.sh
