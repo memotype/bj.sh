@@ -8,7 +8,7 @@ bj() (
   [[ $1 = - ]] || exec <<<"$1"
   shift
 
-  # Some of global variables used:
+  # Some of the global variables used:
   # q="the current query parameter we're looking for"
   # c="the current character" l="the previous value of $c"
   # o="array of 'output' characters, to be joined later (array append + printf
@@ -31,17 +31,19 @@ bj() (
   }
 
 
-  # Scan strings and save them to $o array
+  # Scan strings and save them to $o array (or skip for key scanning).
   st() {
     : : "=== st()"
-    o=()
+    p=$1
+    [[ ! $p ]] && o=()
     while rd; do
       : : "--- lc=$l$c="
+      [[ $p && ! $q ]] && o+=("$l")
       case "$l$c" in
-        \\?) o+=("$c"); c=c ;;
+        \\?) [[ $p ]] || { o+=("$c"); c=c; } ;;
         ?\\) : ;;
         ?\") break ;;
-        *) o+=("$c") ;;
+        *) [[ $p ]] || o+=("$c") ;;
       esac
     done
   }
@@ -49,21 +51,21 @@ bj() (
   # Scan an object
   ob() {
     : : "=== ob()"
-    bl=1
+    b=1
     while rd; do
       : : "--- l=$l= c=$c= q=$q= ---"
       [[ ! $q ]] && o+=("$l")
       case "$c" in
-        {) ((bl++)) ;;
+        {) ((b++)) ;;
         \})
-          ((bl--))
-          [[ $bl = 0 ]] && {
+          ((b--))
+          [[ $b = 0 ]] && {
             [[ $q ]] && return 1
             o+=(})
             break
           }
         ;;
-        \") [[ $q ]] && { st; k=$(pr); } ;;
+        \") [[ $q ]] && { st; k=$(pr); } || st 1 ;;
         # Found the key, just return and let the main loop parse from here
         :) [[ $q && $k = "$q" ]] && return ;;
       esac
@@ -73,16 +75,17 @@ bj() (
   lt() {
     : : "=== lt()"
     [[ $q = 0 ]] && return
-    n=0 bl=1
+    n=0 b=1
     while rd; do
-      : : "--- l=$l= c=$c= q=$q= bl=$bl= ---"
+      : : "--- l=$l= c=$c= q=$q= b=$b= ---"
       [[ ! $q ]] && o+=("$l")
-      case "$bl$c" in
-        ?[|?{) ((bl++)) ;; # ]) <- fix vim syntax
-        ?}) ((bl--)) ;;
+      case "$b$c" in
+        ?\") st 1 ;;
+        ?[|?{) ((b++)) ;; # ]) <- fix vim syntax
+        ?}) ((b--)) ;;
         ?])
-          ((bl--))
-          [[ $bl = 0 ]] && {
+          ((b--))
+          [[ $b = 0 ]] && {
             [[ $q ]] && return 1
             o+=(])
             break
@@ -119,7 +122,7 @@ bj() (
         [[:space:]]) : ;;
         \") st; f=1 ;;
         t|f|n) vl "[a-z]"; f=1 ;;
-        -|[0-9]) vl "[-0-9\.eE\+]"; f=1 ;;
+        -|[0-9]) vl "[-0-9\.eE+]"; f=1 ;;
         {) ob && f=1 ;;
         [) lt && f=1 ;; #])
         *) return 2 ;;

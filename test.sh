@@ -5,12 +5,29 @@ fail() {
   exit 1
 }
 
-if [[ $1 = '-t' ]]; then
-  timetest=1
-  shift
-fi
+while [[ $1 = -* ]]; do
+  case $1 in
+    -t)
+      timetest=1
+      shift
+      ;;
+    -s)
+      shift
+      src=$1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 2
+      ;;
+  esac
+done
 
-src=${1:-bj.sh}
+src=${src:-${1:-bj.sh}}
 echo "Testing $src"
 . "$src"
 
@@ -68,9 +85,16 @@ runtest 11 '{"a": [0, 1, 2], "b": [10, 11, 12]}' b 1 \
 runtest 4 '{"a": [[0, 42], 1, [2, [3, 4]]]}' a 2 1 1
 runtest i '[{"b": "c", "e": {"f": "g"}}, {"h": "i"}]' 1 h
 
+# Strings with delimiters in containers
+runtest '{"x":"b}c"}' '{"a":{"x":"b}c"}}' a
+runtest '["x]y"]' '{"a":["x]y"]}' a
+runtest 'c' '["a,b","c"]' 1
+runtest 'c' '["a]b","c"]' 1
+
 # Numbers tests
 runtest "4.2e10" '[0, -1, 4.2e10]' 2
 runtest "-1" '[0, -1, 4.2e10]' 1
+runtest "1e+2" '[1e+2]' 0
 
 # Array iteration test
 #set -x
