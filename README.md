@@ -11,7 +11,7 @@ It will detect some basic JSON errors, but this is not the goal of bj.sh.
 The entire parser is implemented as a single bash function, so it can be
 `source`d in to your own script, or you can just copy and paste the function in
 to your script to reduce your external dependencies. `bj-80-col.sh` (80-character
-long lines) and `bj-90-col.sh versions are intended for exactly this.
+long lines) and `bj-90-col.sh` versions are intended for exactly this.
 
 ### Usage
 
