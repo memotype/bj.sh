@@ -7,5 +7,5 @@ printf %s "${o[@]}";};st(){ p=$1;[[ $p ]]||o=();while rd;do [[ $p&&! $q ]]&&o+=\
 ((b++));;]|\})((--b))||{ [[ $q ]]&&return 1;o+=("$c");break;};;:)[[ ! $1&&$q&&
 $k = "$q" ]]&&return;;,)[[ $1&&$b = 1 ]]&&{ ((n++));[[ $n = "$q" ]]&&break;};;
 esac;done;};for q in "$@" "";do x=1;o=();while rd;do case $c in [[:space:]])
-false;;\")st;;[tfn0-9-])o=();while rd&&o+=("$l")&&[[ $c =~ [-+.0-9Ea-z] ]];do :
+false;;\")st;;[tfn0-9-])o=();while o+=("$c")&&rd&&[[ $c =~ [-+.0-9Ea-z] ]];do :
 done;;{)co;;[)co 1;;*)return 2;;esac&&{ x=0;break;};done;done;pr;return $x;)

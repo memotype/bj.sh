@@ -51,6 +51,21 @@ runtest() {
   return "$c"
 }
 
+runstdin() {
+  echo "*** stdin: $*"
+  ans=$1
+  data=$2
+  shift 2
+  local e r
+  for e in '' $'\n'; do
+    r=$(printf %s "$data$e" | bj - "$@")
+    c=$?
+    echo "c=$c r=$r"
+    [[ $r = "$ans" ]] || fail "$r != $ans"
+    (( c == 0 )) || fail "bj exit code: $c"
+  done
+}
+
 runtest bar '{"foo": "bar"}' foo || fail "bj exit code: $?"
 
 runtest '{"bar": [1, 2, 3]}' '{"a": "b", "foo": {"bar": [1, 2, 3]}}' foo
@@ -69,7 +84,22 @@ runtest g '  {   "a"
 "foo" : {"bar":
 [1, 2, 3] } }  ' a b e 1
 
+# All four JSON whitespace characters: space, tab, carriage return, line feed
+runtest 1 $'{\r\n\t"a"\t: \r1\n}' a || fail "JSON whitespace test failed"
+runtest 42 $'{\r\n\t"outer" : [\r\n\t{"value"\t:\r 42\n}\n]\r}' \
+  outer 0 value || fail "Nested JSON whitespace test failed"
+
 runtest true '  [  false, {"thing": [true, false]}]' 1 thing 0
+
+# Stdin tests, with and without a trailing newline
+runstdin 123 123
+runstdin true true
+runstdin false false
+runstdin null null
+runstdin string '"string"'
+runstdin '[1,2]' '[1,2]'
+runstdin '{"a":1}' '{"a":1}'
+runstdin node-1 '{"metadata":{"name":"node-1"}}' metadata name
 
 # Array out of bounds test
 runtest '' '[0, 1, 2, 3]' 4 \
