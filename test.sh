@@ -143,9 +143,54 @@ runtest 'baz' '{"foo": {"b}ar": "baz"}}' foo 'b}ar' \
 runtest 'b}az' '{"foo": {"bar": "b}az"}}' foo 'bar' \
   || fail "Wrongly detected closing bracket inside string"
 
-# Escapes in string test
-runtest '"foo" bar' '{"a": "\"", "foo": "\"foo\" bar"}' foo
-runtest '\foo\ bar' '{"a": "\\", "foo": "\\foo\\ bar"}' foo
+# Escape spelling preservation tests
+runtest 'a\"b' '{"value":"a\"b"}' value \
+  || fail "Escaped quote was not preserved"
+runtest 'a\\b' '{"value":"a\\b"}' value \
+  || fail "Escaped backslash was not preserved"
+runtest 'a\/b' '{"value":"a\/b"}' value \
+  || fail "Escaped solidus was not preserved"
+runtest 'a\bb' '{"value":"a\bb"}' value \
+  || fail "Escaped backspace was not preserved"
+runtest 'a\fb' '{"value":"a\fb"}' value \
+  || fail "Escaped form feed was not preserved"
+runtest 'a\nb' '{"value":"a\nb"}' value \
+  || fail "Escaped newline was not preserved"
+runtest 'a\rb' '{"value":"a\rb"}' value \
+  || fail "Escaped carriage return was not preserved"
+runtest 'a\tb' '{"value":"a\tb"}' value \
+  || fail "Escaped tab was not preserved"
+runstdin 'line1\nline2' '{"value":"line1\nline2"}' value
+
+# Escaped structural characters must remain inside the string.
+runtest 'x\"}y,]z:{' '{"outer":{"value":"x\"}y,]z:{","after":1}}' \
+  outer value || fail "Escaped structural text changed parser state"
+
+# Raw UTF-8 and escaped Unicode spellings are intentionally distinct.
+runtest 'café 雪 🚀' '{"raw":"café 雪 🚀"}' raw \
+  || fail "Raw UTF-8 value did not round-trip"
+runtest value '{"café 雪":"value"}' 'café 雪' \
+  || fail "Raw UTF-8 key was not queryable"
+runtest 'caf\u00e9 \u96ea' '{"escaped":"caf\u00e9 \u96ea"}' escaped \
+  || fail "Escaped BMP spelling was not preserved"
+runtest '\uD83D\uDE80' '{"emoji":"\uD83D\uDE80"}' emoji \
+  || fail "Surrogate-pair spelling was not preserved"
+runtest 42 '{"\u0061":42}' '\u0061' \
+  || fail "Escaped object key spelling was not queryable"
+runtest '' '{"\u0061":42}' a
+c=$?
+(( c == 1 )) || fail "Escaped object key matched a decoded query"
+runtest '\u0000' '{"nul":"\u0000"}' nul \
+  || fail "NUL escape spelling was not preserved"
+
+# Skipped strings must still recognize a complete escape pair.
+runtest hit '{"skip":"\\","target":"hit"}' target \
+  || fail "Escape in skipped string changed parser state"
+
+# Selected containers must preserve escape spelling for subsequent queries.
+runtest '{"slash":"\\","value":"line1\nline2"}' \
+  '{"outer":{"slash":"\\","value":"line1\nline2"}}' outer \
+  || fail "Container escape spelling was not preserved"
 
 if (( timetest )); then
   set +x

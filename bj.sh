@@ -31,7 +31,7 @@ bj() (
   }
 
 
-  # Scan strings and save them to $o array (or skip for key scanning).
+  # Scan strings, saving to $o unless navigation only needs to skip them.
   st() {
     : : "=== st()"
     p=$1
@@ -39,10 +39,13 @@ bj() (
     while rd; do
       : : "--- lc=$l$c="
       [[ $p && ! $q ]] && o+=("$l")
-      case $l$c in
-        \\?) [[ $p ]] || { o+=("$c"); c=c; } ;;
-        ?\\) : ;;
-        ?\") break ;;
+      case $c in
+        \\)
+          rd || break
+          # Skip while navigating. Otherwise include $c only when capturing.
+          [[ $p && $q ]] || o+=("$l${c::!p}")
+        ;;
+        \") break ;;
         *) [[ $p ]] || o+=("$c") ;;
       esac
     done
