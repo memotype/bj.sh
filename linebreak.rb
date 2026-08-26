@@ -125,7 +125,7 @@ def split_atom(text, offset, max_len)
   nil
 end
 
-def wrap_line(text, max_len)
+def wrap_line(text, max_len, line_no)
   points = breakpoints(text)
   lines = []
   offset = 0
@@ -148,11 +148,13 @@ def wrap_line(text, max_len)
 
       point = points.find { |left,right| left > offset && right > offset }
       unless point
-        warn "No safe breakpoint in line longer than #{max_len} characters"
+        warn "Line #{line_no}: no safe breakpoint in line longer than " \
+          + "#{max_len} characters:\n#{text}"
         lines << text[offset..]
         return lines
       end
-      warn "No safe breakpoint before column #{max_len}"
+      warn "Line #{line_no}: no safe breakpoint before column #{max_len}:\n" \
+        + text
     end
 
     left, right, cont = point
@@ -194,8 +196,8 @@ script.gsub!(/\r\n?/, "\n")
 lines = []
 code_lines = 0
 
-script.each_line(chomp: true) { |line|
-  wrapped = line.start_with?('#') ? [line] : wrap_line(line, max_len)
+script.each_line(chomp: true).with_index(1) { |line,line_no|
+  wrapped = line.start_with?('#') ? [line] : wrap_line(line, max_len, line_no)
   lines.concat wrapped
   code_lines += wrapped.length unless line.start_with?('#')
 }
