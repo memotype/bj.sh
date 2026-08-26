@@ -20,14 +20,14 @@ bj() (
   # Read a character
   rd() {
     l=$c
-    IFS= read -rd '' -n1 c
+    IFS= read -rN1 c
   }
 
   # Join the characters in the $o array
   pr() {
     # Using ':' with arguments is nice for 'bash -x' debugging
     : : "=== pr()"
-    printf "%s" "${o[@]}"
+    printf %s "${o[@]}"
   }
 
 
@@ -35,11 +35,11 @@ bj() (
   st() {
     : : "=== st()"
     p=$1
-    [[ ! $p ]] && o=()
+    [[ $p ]] || o=()
     while rd; do
       : : "--- lc=$l$c="
       [[ $p && ! $q ]] && o+=("$l")
-      case "$l$c" in
+      case $l$c in
         \\?) [[ $p ]] || { o+=("$c"); c=c; } ;;
         ?\\) : ;;
         ?\") break ;;
@@ -48,87 +48,59 @@ bj() (
     done
   }
 
-  # Scan an object
-  ob() {
-    : : "=== ob()"
-    b=1
-    while rd; do
-      : : "--- l=$l= c=$c= q=$q= ---"
-      [[ ! $q ]] && o+=("$l")
-      case "$c" in
-        {) ((b++)) ;;
-        \})
-          ((b--))
-          [[ $b = 0 ]] && {
-            [[ $q ]] && return 1
-            o+=(})
-            break
-          }
-        ;;
-        \") [[ $q ]] && { st; k=$(pr); } || st 1 ;;
-        # Found the key, just return and let the main loop parse from here
-        :) [[ $q && $k = "$q" ]] && return ;;
-      esac
-    done
-  }
-
-  lt() {
-    : : "=== lt()"
-    [[ $q = 0 ]] && return
+  # Scan an object or list. $1 is set when scanning a list.
+  co() {
+    : : "=== co()"
+    [[ $1 && $q = 0 ]] && return
     n=0 b=1
     while rd; do
       : : "--- l=$l= c=$c= q=$q= b=$b= ---"
-      [[ ! $q ]] && o+=("$l")
-      case "$b$c" in
-        ?\") st 1 ;;
-        ?[|?{) ((b++)) ;; # ]) <- fix vim syntax
-        ?}) ((b--)) ;;
-        ?])
-          ((b--))
-          [[ $b = 0 ]] && {
+      [[ $q ]] || o+=("$l")
+      case $c in
+        \") [[ $1 || ! $q ]] && st 1 || { st; k=$(pr); } ;;
+        [|{) ((b++)) ;; # ]) <- fix vim syntax
+        ]|\})
+          ((--b)) || {
             [[ $q ]] && return 1
-            o+=(])
+            o+=("$c")
             break
           }
         ;;
-        1,)
-          ((n++))
-          [[ $n = "$q" ]] && break
+        # Found the key, just return and let the main loop parse from here
+        :) [[ ! $1 && $q && $k = "$q" ]] && return ;;
+        ,)
+          [[ $1 && $b = 1 ]] && {
+            ((n++))
+            [[ $n = "$q" ]] && break
+          }
         ;;
       esac
     done
-  }
-
-  # Simple value parsing (numbers, true/false, etc)
-  vl() {
-    : : "=== vl() $1"
-    o=()
-    while
-      rd \
-        && o+=("$l") \
-        && [[ $c =~ $1 ]]
-    do :;done
   }
 
   # Main - scan input for query terms
   for q in "$@" ""; do
     # x="exit code"
-    [[ $q ]] && x=1
+    x=1
     : : "--- q=$q"
-    f= o=()
+    o=()
     while rd; do
       : : "mn --- l=$l c=$c"
       case $c in
-        [[:space:]]) : ;;
-        \") st; f=1 ;;
-        t|f|n) vl "[a-z]"; f=1 ;;
-        -|[0-9]) vl "[-0-9\.eE+]"; f=1 ;;
-        {) ob && f=1 ;;
-        [) lt && f=1 ;; #])
+        [[:space:]]) false ;;
+        \") st ;;
+        [tfn0-9-])
+          o=()
+          while
+            o+=("$c") \
+              && rd \
+              && [[ $c =~ [-+.0-9Ea-z] ]]
+          do :;done
+        ;;
+        {) co ;;
+        [) co 1 ;; #])
         *) return 2 ;;
-      esac
-      # If we (f)ound our key, go to the next
-      [[ $f ]] && { x=0; break; }
+      esac && { x=0; break; }
     done
   done
 
