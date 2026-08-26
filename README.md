@@ -30,6 +30,17 @@ from stdin.
 
 QUERY terms are the keys and indexes you want to query from the JSON data.
 
+### Output
+
+`bj.sh` returns the text found at the requested key or index. It does not
+decode or encode Unicode or other JSON escape sequences. For example, if a
+JSON string contains `\n`, `bj.sh` returns the two ASCII characters `\` and
+`n`, not a newline. Other escape sequences, such as `\uD83D\uDE00`, are also
+returned literally as they appeared in the JSON input.
+
+It is up to the caller to interpret or otherwise handle escape sequences in
+the returned text.
+
 ### Examples
 
     source bj.sh
