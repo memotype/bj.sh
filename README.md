@@ -41,6 +41,10 @@ returned literally as they appeared in the JSON input.
 It is up to the caller to interpret or otherwise handle escape sequences in
 the returned text.
 
+Object member names follow the same rule when matched. A key spelled
+`"\u0061"` in the JSON input is queried as `\u0061`, not as the decoded
+character `a`.
+
 ### Examples
 
     source bj.sh
