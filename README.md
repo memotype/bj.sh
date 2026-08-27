@@ -8,17 +8,16 @@ the size of the 'jq' binary)
 bj.sh is *NOT* a JSON validator, behavior is undefined if given invalid JSON!
 It will detect some basic JSON errors, but this is not the goal of bj.sh.
 
-The entire parser is implemented as a single bash function, so it can be
+The entire parser is implemented as a single bash function, `bj`, so it can be
 `source`d in to your own script, or you can just copy and paste the function in
-to your script to reduce your external dependencies. `bj-80-col.sh` (80-character
-long lines) and `bj-90-col.sh` versions are intended for exactly this.
+to your script to reduce your external dependencies. `bj-80-col.sh` (80-
+character long lines) and `bj-90-col.sh` versions are intended for exactly this.
 
 ### Usage
 
 Called as an external script:
 
     bj.sh [DATA] [QUERY ...]
-
 
 Sourced or copied in to your script:
 
@@ -29,21 +28,6 @@ DATA can be a JSON string, or `-`. If DATA is `-`, JSON data is read
 from stdin.
 
 QUERY terms are the keys and indexes you want to query from the JSON data.
-
-### Output
-
-`bj.sh` returns the text found at the requested key or index. It does not
-decode or encode Unicode or other JSON escape sequences. For example, if a
-JSON string contains `\n`, `bj.sh` returns the two ASCII characters `\` and
-`n`, not a newline. Other escape sequences, such as `\uD83D\uDE00`, are also
-returned literally as they appeared in the JSON input.
-
-It is up to the caller to interpret or otherwise handle escape sequences in
-the returned text.
-
-Object member names follow the same rule when matched. A key spelled
-`"\u0061"` in the JSON input is queried as `\u0061`, not as the decoded
-character `a`.
 
 ### Examples
 
@@ -68,3 +52,18 @@ this will set `r` to `node0`. To get the list of nodes and iterate over them:
 call returns `["node0", "node1"]`. Also, `bj` will exit with a code of 1 if the
 queried key or index doesn't exist. So, when `$i` is `2`, `bj` will return 1,
 breaking out of the `while` loop.
+
+### Output
+
+`bj.sh` returns the text found at the requested key or index. It does not
+decode or encode Unicode or other JSON escape sequences. For example, if a
+JSON string contains `\n`, `bj.sh` returns the two ASCII characters `\` and
+`n`, not a newline. Other escape sequences, such as `\uD83D\uDE00`, are also
+returned literally *as is* in the JSON input.
+
+Object member names follow the same rule when matched. A key spelled
+`"\u0061"` in the JSON input is queried as `\u0061`, not as the decoded
+character `a`.
+
+It is up to the caller to interpret or otherwise handle escape sequences in
+the returned text.
