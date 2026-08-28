@@ -64,7 +64,8 @@ bj() (
         [|{) ((b++)) ;; # ]) <- fix vim syntax
         ]|\})
           ((--b)) || {
-            [[ $q ]] && return 1
+            # bj runs in a subshell, so exit only stops this invocation.
+            [[ $q ]] && exit 1
             o+=("$c")
             break
           }
