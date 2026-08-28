@@ -53,19 +53,6 @@ runtest() {
   runteststatus 0 "$@"
 }
 
-runnonzero() {
-  local ans=$1
-  shift
-  echo "*** nonzero status: $*"
-  local c r
-  r=$(bj "$@")
-  c=$?
-  echo "c=$c r=$r"
-  [[ $r = "$ans" ]] || fail "$r != $ans"
-  (( c != 0 )) || fail "bj exit code: $c == 0"
-  echo "pass"
-}
-
 runstdin() {
   echo "*** stdin: $*"
   ans=$1
@@ -119,9 +106,7 @@ runstdin node-1 '{"metadata":{"name":"node-1"}}' metadata name
 # Array out of bounds test
 runteststatus 1 '' '[0, 1, 2, 3]' 4
 
-# Nested array exhaustion currently has a separate status discrepancy. Keep
-# requiring failure without making that status part of the test contract.
-runnonzero '' '{"a": [0, 1, 2, 3]}' a 4
+runteststatus 1 '' '{"a": [0, 1, 2, 3]}' a 4
 
 runtest 11 '{"a": [0, 1, 2], "b": [10, 11, 12]}' b 1 \
   || fail "bad exit code after valid array index query: $?"
@@ -158,8 +143,8 @@ while :; do
   ((i++))
 done
 echo "c=$terminal_status count=${#s[@]} values=${s[*]}"
-(( terminal_status != 0 )) \
-  || fail "array iteration exit code: $terminal_status == 0"
+(( terminal_status == 1 )) \
+  || fail "array iteration exit code: $terminal_status != 1"
 (( ${#s[@]} == 3 )) || fail "array iteration count: ${#s[@]} != 3"
 [[ ${s[0]} = 42 && ${s[1]} = 69 && ${s[2]} = 420 ]] \
   || fail "array iteration values: ${s[*]} != 42 69 420"
