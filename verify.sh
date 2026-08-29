@@ -30,6 +30,11 @@ output=$(printf %s '{"foo":"bar"}' | ./bj.sh - foo)
 status=$?
 [[ $output = bar && $status = 0 ]] || fail "bj.sh CLI stdin query failed"
 
+output=$(./bj.sh '{"foo":"bar"}' missing)
+status=$?
+[[ -z $output && $status = 1 ]] \
+  || fail "bj.sh CLI missing-query status failed"
+
 echo "Checking generated files"
 verify_dir=$(mktemp -d) || fail "Could not create temporary directory"
 trap 'rm -r -- "$verify_dir"' EXIT
