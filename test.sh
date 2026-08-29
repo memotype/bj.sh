@@ -68,15 +68,6 @@ runstdin() {
   done
 }
 
-# Direct CLI tests
-output=$(./bj.sh '{"foo":"bar"}' foo)
-status=$?
-[[ $output = bar && $status = 0 ]] || fail "bj.sh CLI query failed"
-
-output=$(printf %s '{"foo":"bar"}' | ./bj.sh - foo)
-status=$?
-[[ $output = bar && $status = 0 ]] || fail "bj.sh CLI stdin query failed"
-
 runtest bar '{"foo": "bar"}' foo || fail "bj exit code: $?"
 
 runtest '{"bar": [1, 2, 3]}' '{"a": "b", "foo": {"bar": [1, 2, 3]}}' foo

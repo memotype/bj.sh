@@ -21,6 +21,15 @@ for file in "${executables[@]}"; do
   [[ -x $file ]] || fail "$file is not executable"
 done
 
+echo "Checking bj.sh CLI"
+output=$(./bj.sh '{"foo":"bar"}' foo)
+status=$?
+[[ $output = bar && $status = 0 ]] || fail "bj.sh CLI query failed"
+
+output=$(printf %s '{"foo":"bar"}' | ./bj.sh - foo)
+status=$?
+[[ $output = bar && $status = 0 ]] || fail "bj.sh CLI stdin query failed"
+
 echo "Checking generated files"
 verify_dir=$(mktemp -d) || fail "Could not create temporary directory"
 trap 'rm -r -- "$verify_dir"' EXIT
