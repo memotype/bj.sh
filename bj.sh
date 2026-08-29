@@ -54,7 +54,6 @@ bj() (
   # Scan an object or list. $1 is set when scanning a list.
   co() {
     : : "=== co()"
-    [[ $1 && $q = 0 ]] && return
     n=0 b=1
     while rd; do
       : : "--- l=$l= c=$c= q=$q= b=$b= ---"
@@ -73,7 +72,7 @@ bj() (
         # Found the key, just return and let the main loop parse from here
         :) [[ ! $1 && $q && $k = "$q" ]] && return ;;
         ,)
-          [[ $1 && $b = 1 ]] && {
+          ((0$1 && b == 1)) && {
             ((n++))
             [[ $n = "$q" ]] && break
           }
@@ -84,34 +83,33 @@ bj() (
 
   # Main - scan input for query terms
   for q in "$@" ""; do
-    # x="exit code"
-    x=1
+    shift && [[ ! $q ]] && return 2
+    # x="success"
+    x=0
     : : "--- q=$q"
     o=()
     while rd; do
       : : "mn --- l=$l c=$c"
       case $c in
-        [[:space:]]) false ;;
+        [[:space:]]) ! : ;;
         \") st ;;
         [tfn0-9-])
-          o=()
-          while
-            o+=("$c") \
+          while o+=("$c") \
               && rd \
               && [[ $c =~ [-+.0-9Ea-z] ]]
           do :;done
         ;;
         {) co ;;
-        [) co 1 ;; #])
+        [) [[ $q = 0 ]] || co 1 ;; #])
         *) return 2 ;;
-      esac && { x=0; break; }
+      esac && { x=1; break; }
     done
   done
 
   # Print whatever we last stored in $o
   pr
 
-  return $x
+  ((x))
 )
 
 : ENDBJ
