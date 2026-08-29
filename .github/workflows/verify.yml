@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Build generated scripts
-        run: make all
+        run: make -B all
 
       - name: Run verification
         run: make verify
