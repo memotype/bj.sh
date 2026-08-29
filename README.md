@@ -6,7 +6,10 @@ automation, or any environment where 'jq' isn't available (Plus, bj.sh is 1/20th
 the size of the 'jq' binary)
 
 bj.sh is *NOT* a JSON validator, behavior is undefined if given invalid JSON!
-It will detect some basic JSON errors, but this is not the goal of bj.sh.
+It will detect some basic JSON errors, but this is not the goal of bj.sh. It
+also does not support querying empty JSON object member names (e.g.,
+`{"": "foo"}`). If your tool/API outputs JSON objects with empty keys, fix it in
+your API/tool, or contact your vendor.
 
 The entire parser is implemented as a single bash function, `bj`, so it can be
 `source`d in to your own script, or you can just copy and paste the function in
