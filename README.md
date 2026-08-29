@@ -1,3 +1,5 @@
+[![Yes, this bizarre 863-byte Bash JSON parser is actually tested.](https://github.com/memotype/bj.sh/actions/workflows/verify.yml/badge.svg)](https://github.com/memotype/bj.sh/actions/workflows/verify.yml)
+
 bj.sh is a pure GNU Bash library for parsing JSON data.
 
 bj.sh is meant to be run as a script, sourced as a library, or copied directly

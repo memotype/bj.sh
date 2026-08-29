@@ -1,8 +1,11 @@
 SOURCES = bj.sh rollup.rb linebreak.rb
 TARGETS = bj-1line.sh bj-80-col.sh bj-90-col.sh
 
-.PHONY: all
+.PHONY: all verify
 all: $(TARGETS)
+
+verify:
+	./verify.sh
 
 $(TARGETS): $(SOURCES)
 
