@@ -54,7 +54,7 @@ bj() (
   # Scan an object or list. $1 is set when scanning a list.
   co() {
     : : "=== co()"
-    n=0 b=1
+    n= b=1
     while rd; do
       : : "--- l=$l= c=$c= q=$q= b=$b= ---"
       [[ $q ]] || o+=("$l")
@@ -69,8 +69,9 @@ bj() (
             break
           }
         ;;
-        # Found the key, just return and let the main loop parse from here
-        :) [[ ! $1 && $q && $k = "$q" ]] && return ;;
+        # $1 is set for lists, so $1$b is 1 only at direct object depth.
+        # Found the key, just stop and let the main loop parse from here.
+        :) [[ $1$b = 1 && $q && $k = "$q" ]] && break ;;
         ,)
           ((0$1 && b == 1)) && {
             ((n++))
@@ -102,7 +103,7 @@ bj() (
         {) co ;;
         [) [[ $q = 0 ]] || co 1 ;; #])
         *) return 2 ;;
-      esac && { x=1; break; }
+      esac && x=1 && break
     done
   done
 
