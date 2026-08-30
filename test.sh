@@ -121,6 +121,15 @@ runtest '["x]y"]' '{"a":["x]y"]}' a
 runtest 'c' '["a,b","c"]' 1
 runtest 'c' '["a]b","c"]' 1
 
+# Object keys must only match at the current container depth
+runtest top '{"outer":{"target":"nested"},"target":"top"}' target
+runteststatus 1 '' '{"outer":{"target":"nested"},"other":0}' target
+runtest top '{"items":[{"target":"nested"}],"target":"top"}' target
+runteststatus 1 '' '{"items":[{"target":"nested"}],"other":0}' target
+runtest top '{"target":"top","outer":{"target":"nested"}}' target
+runtest direct \
+  '{"level":{"child":{"target":"nested"},"target":"direct"}}' level target
+
 # Numbers tests
 runtest "4.2e10" '[0, -1, 4.2e10]' 2
 runtest "-1" '[0, -1, 4.2e10]' 1
