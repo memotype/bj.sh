@@ -130,6 +130,22 @@ runtest top '{"target":"top","outer":{"target":"nested"}}' target
 runtest direct \
   '{"level":{"child":{"target":"nested"},"target":"direct"}}' level target
 
+# Traversal must stop when a selected value is a scalar.
+runteststatus 1 '' '{"a":"x","b":"y"}' a extra
+runteststatus 1 '' '{"b":"y","a":"x"}' a extra
+runteststatus 1 '' '{"a":1,"b":2}' a extra
+runteststatus 1 '' '{"b":2,"a":1}' a extra
+runteststatus 1 '' '{"a":true,"b":false}' a extra
+runteststatus 1 '' '{"b":false,"a":true}' a extra
+runteststatus 1 '' '{"a":false,"b":true}' a extra
+runteststatus 1 '' '{"b":true,"a":false}' a extra
+runteststatus 1 '' '{"a":null,"b":0}' a extra
+runteststatus 1 '' '{"b":0,"a":null}' a extra
+runteststatus 1 '' '[1,2]' 0 extra
+runteststatus 1 '' '[1,2]' 1 extra
+runteststatus 1 '' '{"outer":{"a":1,"b":2}}' outer a extra
+runteststatus 1 '' '{"a":1,"b":2}' a extra more
+
 # Numbers tests
 runtest "4.2e10" '[0, -1, 4.2e10]' 2
 runtest "-1" '[0, -1, 4.2e10]' 1
@@ -229,6 +245,17 @@ runtest hit '{"a":{},"b":[],"c":{"result":"hit"}}' c result
 runtest hit \
   '[0,1,2,3,4,5,6,7,8,9,{"result":"hit"}]' 10 result
 runtest hit '[{},[],{"result":"hit"}]' 2 result
+
+# Empty caller query terms are unsupported and fail when reached.
+runteststatus 2 '' '{"":42}' ''
+runteststatus 2 '' '{"outer":{"":"value"}}' outer ''
+runteststatus 2 '' '{"outer":{"leaf":1}}' '' outer
+runteststatus 2 '' '{"outer":{"leaf":1}}' outer '' leaf
+runteststatus 2 '' '{"outer":{"leaf":1}}' outer leaf ''
+runteststatus 1 '' '{"outer":{"leaf":1}}' missing ''
+runtest 7 '{"":42,"normal":7}' normal
+runtest '{"":42}' '{"":42}'
+runtest '' '{"value":""}' value
 
 # Representative Kubernetes-shaped data used by build and shell automation
 kubernetes_json='{"items":[{"metadata":{"name":"api","annotations":{"example.com/config":"line1\nline2"}},"spec":{"nodeName":null,"containers":[{"name":"app","env":[{"name":"MODE","value":""}]}]}}]}'
