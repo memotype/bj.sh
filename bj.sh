@@ -18,30 +18,30 @@ bj() (
   c=
 
   # Read a character
-  rd() {
+  r() {
     l=$c
     IFS= read -rN1 c
   }
 
   # Join the characters in the $o array
-  pr() {
+  p() {
     # Using ':' with arguments is nice for 'bash -x' debugging
-    : : "=== pr()"
+    : : "=== p()"
     printf %s "${o[@]}"
   }
 
 
   # Scan strings, saving to $o unless navigation only needs to skip them.
-  st() {
-    : : "=== st()"
+  s() {
+    : : "=== s()"
     p=$1
     [[ $p ]] || o=()
-    while rd; do
+    while r; do
       : : "--- lc=$l$c="
       [[ $p && ! $q ]] && o+=("$l")
       case $c in
         \\)
-          rd || break
+          r || break
           # Skip while navigating. Otherwise include $c only when capturing.
           [[ $p && $q ]] || o+=("$l${c::!p}")
         ;;
@@ -55,11 +55,11 @@ bj() (
   co() {
     : : "=== co()"
     n= b=1
-    while rd; do
+    while r; do
       : : "--- l=$l= c=$c= q=$q= b=$b= ---"
       [[ $q ]] || o+=("$l")
       case $c in
-        \") [[ $1 || ! $q ]] && st 1 || { st; k=$(pr); } ;;
+        \") [[ $1 || ! $q ]] && s 1 || { s; k=$(p); } ;;
         [|{) ((b++)) ;; # ]) <- fix vim syntax
         ]|\})
           ((--b)) || {
@@ -73,10 +73,9 @@ bj() (
         # Found the key, just stop and let the main loop parse from here.
         :) [[ $1$b = 1 && $q && $k = "$q" ]] && break ;;
         ,)
-          ((0$1 && b == 1)) && {
-            ((n++))
-            [[ $n = "$q" ]] && break
-          }
+          ((0$1 && b==1)) \
+            && [[ $q = $((++n)) ]] \
+            && break
         ;;
       esac
     done
@@ -89,26 +88,28 @@ bj() (
     x=0
     : : "--- q=$q"
     o=()
-    while rd; do
+    while r; do
       : : "mn --- l=$l c=$c"
-      case $c in
-        [[:space:]]) ! : ;;
-        \") st ;;
+      # Prefix with $q so scalar cases only match during final output.
+      case $q$c in
+        *[[:space:]]) ! : ;;
+        \") s ;;
         [tfn0-9-])
           while o+=("$c") \
-              && rd \
-              && [[ $c =~ [-+.0-9Ea-z] ]]
+            && r \
+            && [[ $c =~ [-+.0-9Ea-z] ]]
           do :;done
         ;;
-        {) co ;;
-        [) [[ $q = 0 ]] || co 1 ;; #])
-        *) return 2 ;;
+        *{) co ;;
+        *[) [[ $q = 0 ]] || co 1 ;; #])
+        ?) return 2 ;;
+        *) return 1 ;;
       esac && x=1 && break
     done
   done
 
   # Print whatever we last stored in $o
-  pr
+  p
 
   ((x))
 )
