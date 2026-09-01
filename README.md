@@ -73,3 +73,18 @@ character `a`.
 
 It is up to the caller to interpret or otherwise handle escape sequences in
 the returned text.
+
+### Testing
+
+Parser test cases live in `tests.yml` and are run by `test.rb`. Each case has a
+lower-case hyphenated name, JSON input and transport, query terms, expected
+output and status, and a user-facing description. Run the catalog against a
+specific implementation with:
+
+    ./test.rb -s ./bj.sh
+
+Optional timing cases require `citylots.json` and are included with `-t`.
+Repository-level verification, including every generated implementation under
+the default locale and `LC_ALL=C`, is run with:
+
+    make verify
