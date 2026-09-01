@@ -103,6 +103,40 @@ runstdin '[1,2]' '[1,2]'
 runstdin '{"a":1}' '{"a":1}'
 runstdin node-1 '{"metadata":{"name":"node-1"}}' metadata name
 
+# The parser must work when inherited shell options include nounset without
+# changing the caller's option state.
+echo "*** nounset caller: $src"
+bash -u /dev/stdin "$src" <<'EOF' \
+  || fail "$src failed with nounset enabled"
+src=$1
+. "$src"
+
+check() {
+  local expected=$1
+  shift
+  local c r
+  r=$(bj "$@")
+  c=$?
+  [[ $r = "$expected" && $c = 0 ]] || exit 1
+}
+
+json='{"object":{"string":"value","number":42,"true":true,"false":false,"null":null,"array":[0,{"nested":"hit"}]}}'
+check '{"string":"value","number":42,"true":true,"false":false,"null":null,"array":[0,{"nested":"hit"}]}' "$json" object
+check value "$json" object string
+check 42 "$json" object number
+check true "$json" object true
+check false "$json" object false
+check null "$json" object null
+check '[0,{"nested":"hit"}]' "$json" object array
+check hit "$json" object array 1 nested
+
+r=$(bj "$json" object missing)
+c=$?
+[[ -z $r && $c = 1 ]] || exit 1
+[[ $- = *u* ]] || exit 1
+EOF
+echo pass
+
 # Array out of bounds test
 runteststatus 1 '' '[0, 1, 2, 3]' 4
 

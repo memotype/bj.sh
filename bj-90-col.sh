@@ -1,10 +1,10 @@
 # (C) Isaac Freeman (memotype@gmail.com). See https://github.com/memotype/bj.sh
-bj()([[ $1 = - ]]||exec<<<"$1";shift;c=;r(){ l=$c;IFS= read -rN1 c;};p(){ printf %s \
-"${o[@]}";};s(){ p=$1;[[ $p ]]||o=();while r;do [[ $p&&! $q ]]&&o+=("$l");case $c in \\)r\
-||break;[[ $p&&$q ]]||o+=("$l${c::!p}");;\")break;;*)[[ $p ]]||o+=("$c");;esac;done;};co\
-(){ n= b=1;while r;do [[ $q ]]||o+=("$l");case $c in \")[[ $1||! $q ]]&&s 1||{ s;k=$(p);}
-;;[|{)((b++));;]|\})((--b))||{ [[ $q ]]&&exit 1;o+=("$c");break;};;:)[[ $1$b = 1&&$q&&$k \
-= "$q" ]]&&break;;,)((0$1&&b==1))&&[[ $q = $((++n)) ]]&&break;;esac;done;};for q in "$@" \
-"";do shift&&[[ ! $q ]]&&return 2;x=0;o=();while r;do case $q$c in *[[:space:]])! :;;\")s
-;;[tfn0-9-])while o+=("$c")&&r&&[[ $c =~ [-+.0-9Ea-z] ]];do :;done;;*{)co;;*[)[[ $q = 0 \
-]]||co 1;;?)return 2;;*)return 1;;esac&&x=1&&break;done;done;p;((x));)
+bj()(set +u;[[ $1 = - ]]||exec<<<"$1";shift;c=;r(){ l=$c;IFS= read -rN1 c;};p(){ printf \
+%s "${o[@]}";};s(){ p=$1;[[ $p ]]||o=();while r;do [[ $p&&! $q ]]&&o+=("$l");case $c in \
+\\)r||break;[[ $p&&$q ]]||o+=("$l${c::!p}");;\")break;;*)[[ $p ]]||o+=("$c");;esac;done;}
+co(){ n= b=1;while r;do [[ $q ]]||o+=("$l");case $c in \")[[ $1||! $q ]]&&s 1||{ s;k=$(p)
+};;[|{)((b++));;]|\})((--b))||{ [[ $q ]]&&exit 1;o+=("$c");break;};;:)[[ $1$b = 1&&$q&&
+$k = "$q" ]]&&break;;,)((0$1&&b==1))&&[[ $q = $((++n)) ]]&&break;;esac;done;};for q in \
+"$@" "";do shift&&[[ ! $q ]]&&return 2;x=0;o=();while r;do case $q$c in *[[:space:]])! :;;
+\")s;;[tfn0-9-])while o+=("$c")&&r&&[[ $c =~ [-+.0-9Ea-z] ]];do :;done;;*{)co;;*[)[[ $q \
+= 0 ]]||co 1;;?)return 2;;*)return 1;;esac&&x=1&&break;done;done;p;((x));)
