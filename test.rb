@@ -7,25 +7,33 @@ require 'yaml'
 
 NAME_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
 QUERY_DRIVER = <<~'BASH'
+  [[ $- != *u* ]] || trap '[[ $- == *u* ]] || exit 125' EXIT
   . "$1" || exit 126
   shift
-  [[ $- != *u* ]] || trap '[[ $- == *u* ]] || exit 125' EXIT
   bj "$@"
 BASH
 
 # A large fixture cannot cross exec's argument-size limit, so Bash must turn
 # this one file into a function argument after the process starts.
 FILE_ARGUMENT_DRIVER = <<~'BASH'
+  [[ $- != *u* ]] || trap '[[ $- == *u* ]] || exit 125' EXIT
   . "$1" || exit 126
   json_file=$2
   shift 2
-  [[ $- != *u* ]] || trap '[[ $- == *u* ]] || exit 125' EXIT
   bj "$(<"$json_file")" "$@"
 BASH
 
 class CatalogError < StandardError; end
 
 class Catalog
+  DOCUMENT_KEYS = %w[version report fixtures tests].freeze
+  REPORT_KEYS = %w[success failure].freeze
+  TEST_KEYS = %w[name description input query expected shell tags operation].freeze
+  INPUT_KEYS = %w[json fixture file transport trailing-newline].freeze
+  EXPECTED_KEYS = %w[output status].freeze
+  SHELL_KEYS = %w[nounset].freeze
+  SUPPORTED_TAGS = %w[timing].freeze
+
   attr_reader :report, :tests
 
   def initialize(path, include_timing: false)
@@ -63,10 +71,13 @@ class Catalog
 
   def validate_document(document)
     raise CatalogError, 'catalog must contain a YAML mapping' unless document.is_a?(Hash)
+    reject_unknown_keys('catalog', document, DOCUMENT_KEYS)
     raise CatalogError, 'unsupported catalog version' unless document['version'] == 1
+    report = document['report']
+    raise CatalogError, 'report must be a mapping' unless report.is_a?(Hash)
+    reject_unknown_keys('report', report, REPORT_KEYS)
     raise CatalogError, 'report must contain success and failure strings' unless
-      document['report'].is_a?(Hash) &&
-        %w[success failure].all? { |key| document['report'][key].is_a?(String) }
+      REPORT_KEYS.all? { |key| report[key].is_a?(String) }
     raise CatalogError, 'fixtures must be a mapping' unless
       document.fetch('fixtures', {}).is_a?(Hash)
     raise CatalogError, 'fixture values must be strings' unless
@@ -78,6 +89,7 @@ class Catalog
     names = {}
     tests.each_with_index do |test, index|
       raise CatalogError, "test #{index + 1} must be a mapping" unless test.is_a?(Hash)
+      reject_unknown_keys("test #{index + 1}", test, TEST_KEYS)
       name = test['name']
       raise CatalogError, "test #{index + 1} has an invalid name" unless
         name.is_a?(String) && NAME_PATTERN.match?(name)
@@ -91,14 +103,18 @@ class Catalog
       validate_input(name, test['input'])
       validate_expected(name, test)
       validate_shell(name, test.fetch('shell', {}))
+      tags = test.fetch('tags', [])
       raise CatalogError, "#{name}: tags must be an array of strings" unless
-        test.fetch('tags', []).is_a?(Array) &&
-          test.fetch('tags', []).all? { |tag| tag.is_a?(String) }
+        tags.is_a?(Array) && tags.all? { |tag| tag.is_a?(String) }
+      unsupported = tags - SUPPORTED_TAGS
+      raise CatalogError, "#{name}: unsupported tags #{unsupported.map(&:inspect).join(', ')}" \
+        unless unsupported.empty?
     end
   end
 
   def validate_input(name, input)
     raise CatalogError, "#{name}: input must be a mapping" unless input.is_a?(Hash)
+    reject_unknown_keys("#{name} input", input, INPUT_KEYS)
     sources = %w[json fixture file].select { |key| input.key?(key) }
     raise CatalogError, "#{name}: input needs exactly one source" unless sources.length == 1
     source = sources.first
@@ -121,6 +137,7 @@ class Catalog
   def validate_expected(name, test)
     expected = test['expected']
     raise CatalogError, "#{name}: expected must be a mapping" unless expected.is_a?(Hash)
+    reject_unknown_keys("#{name} expected", expected, EXPECTED_KEYS)
     raise CatalogError, "#{name}: expected status must be an integer" unless
       expected['status'].is_a?(Integer)
     operation = test.fetch('operation', 'query')
@@ -135,8 +152,16 @@ class Catalog
 
   def validate_shell(name, shell)
     raise CatalogError, "#{name}: shell must be a mapping" unless shell.is_a?(Hash)
+    reject_unknown_keys("#{name} shell", shell, SHELL_KEYS)
     return unless shell.key?('nounset') && ![true, false].include?(shell['nounset'])
     raise CatalogError, "#{name}: shell nounset must be true or false"
+  end
+
+  def reject_unknown_keys(context, mapping, allowed)
+    unknown = mapping.keys - allowed
+    return if unknown.empty?
+    label = unknown.length == 1 ? 'key' : 'keys'
+    raise CatalogError, "#{context}: unknown #{label} #{unknown.map(&:inspect).join(', ')}"
   end
 
   def timing?(test)

@@ -36,10 +36,100 @@ status=$?
 [[ -z $output && $status = 1 ]] \
   || fail "bj.sh CLI missing-query status failed"
 
-echo "Checking generated files"
 verify_dir=$(mktemp -d) || fail "Could not create temporary directory"
 trap 'rm -r -- "$verify_dir"' EXIT
 
+echo "Checking test harness guardrails"
+bad_source="$verify_dir/disables-nounset.sh"
+bad_source_log="$verify_dir/disables-nounset.log"
+printf '. %q\nset +u\n' "$PWD/bj.sh" > "$bad_source"
+if ./test.rb -s "$bad_source" > "$bad_source_log" 2>&1; then
+  fail "test runner accepted a source that disables nounset"
+fi
+grep -F 'PASS top-level-string-value' "$bad_source_log" > /dev/null \
+  || fail "nounset guardrail source failed unrelated tests"
+grep -F 'FAIL nounset-object-output' "$bad_source_log" > /dev/null \
+  || fail "test runner did not reject source-time nounset corruption"
+grep -F 'status actual=125 expected=0' "$bad_source_log" > /dev/null \
+  || fail "nounset corruption did not use the runner guardrail status"
+
+file_argument_json="$verify_dir/file-argument.json"
+file_argument_catalog="$verify_dir/file-argument.yml"
+file_argument_log="$verify_dir/file-argument.log"
+printf %s '{"value":"ok"}' > "$file_argument_json"
+printf '%s\n' \
+  'version: 1' \
+  'report:' \
+  '  success: "PASS %{name}: %{description}"' \
+  '  failure: "FAIL %{name}: %{description}"' \
+  'tests:' \
+  '  - name: nounset-file-argument' \
+  '    description: rejects source-time nounset corruption for file arguments' \
+  '    input:' \
+  '      file: file-argument.json' \
+  '      transport: argument' \
+  '    query: [value]' \
+  '    shell: {nounset: true}' \
+  '    expected:' \
+  "      output: 'ok'" \
+  '      status: 0' \
+  > "$file_argument_catalog"
+if ./test.rb -f "$file_argument_catalog" -s "$bad_source" \
+    > "$file_argument_log" 2>&1
+then
+  fail "file-argument driver accepted a source that disables nounset"
+fi
+grep -F 'FAIL nounset-file-argument' "$file_argument_log" > /dev/null \
+  || fail "file-argument driver did not reject source-time nounset corruption"
+grep -F 'status actual=125 expected=0' "$file_argument_log" > /dev/null \
+  || fail "file-argument nounset corruption did not use guardrail status"
+
+check_catalog_rejected() {
+  local name=$1 from=$2 to=$3 expected=$4
+  local catalog="$verify_dir/$name.yml"
+  local log="$verify_dir/$name.log"
+
+  ruby -e '
+    input, output, from, to = ARGV
+    text = File.read(input)
+    abort "Source text not found: #{from.inspect}" unless text.sub!(from, to)
+    File.write(output, text)
+  ' tests.yml "$catalog" "$from" "$to" \
+    || fail "could not prepare $name catalog check"
+  if ./test.rb -f "$catalog" > "$log" 2>&1; then
+    fail "test runner accepted $name"
+  fi
+  grep -F "$expected" "$log" > /dev/null \
+    || fail "test runner rejected $name for the wrong reason"
+}
+
+check_catalog_rejected unknown-document-key \
+  'version: 1' $'version: 1\nunknown: true' \
+  'catalog: unknown key "unknown"'
+check_catalog_rejected unknown-report-key \
+  $'report:\n  success:' $'report:\n  unknown: true\n  success:' \
+  'report: unknown key "unknown"'
+check_catalog_rejected unknown-test-key \
+  '  - name: top-level-string-value' \
+  $'  - name: top-level-string-value\n    unknown: true' \
+  'test 1: unknown key "unknown"'
+check_catalog_rejected unknown-input-key \
+  $'    input:\n      json:' \
+  $'    input:\n      transprot: stdin\n      json:' \
+  'top-level-string-value input: unknown key "transprot"'
+check_catalog_rejected unknown-expected-key \
+  $'    expected:\n      output:' \
+  $'    expected:\n      statsu: 0\n      output:' \
+  'top-level-string-value expected: unknown key "statsu"'
+check_catalog_rejected unknown-shell-key \
+  '    shell: {nounset: true}' \
+  '    shell: {nounset: true, nounsett: true}' \
+  'nounset-object-output shell: unknown key "nounsett"'
+check_catalog_rejected unsupported-tag \
+  '    tags: [timing]' '    tags: [benchmark]' \
+  'timing-large-fixture-argument: unsupported tags "benchmark"'
+
+echo "Checking generated files"
 ./rollup.rb bj.sh "$verify_dir/bj-1line.sh" \
   || fail "Could not regenerate bj-1line.sh"
 ./linebreak.rb --max-lines 13 80 \
