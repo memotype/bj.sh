@@ -3,6 +3,8 @@
 # Copyright Isaac Freeman (memotype@gmail.com), licensed under the MIT license
 
 bj() (
+  set +u
+
   # If $1 is -, just read from stdin, otherwise we push $1 to stdin.
   # The JSON value is read as a stream of characters from stdin.
   [[ $1 = - ]] || exec <<<"$1"

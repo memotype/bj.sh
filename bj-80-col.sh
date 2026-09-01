@@ -1,7 +1,7 @@
 # (C) Isaac Freeman (memotype@gmail.com). See https://github.com/memotype/bj.sh
-bj()([[ $1 = - ]]||exec<<<"$1";shift;c=;r(){ l=$c;IFS= read -rN1 c;};p(){ \
-printf %s "${o[@]}";};s(){ p=$1;[[ $p ]]||o=();while r;do [[ $p&&! $q ]]&&o+=(\
-"$l");case $c in \\)r||break;[[ $p&&$q ]]||o+=("$l${c::!p}");;\")break;;*)[[ \
+bj()(set +u;[[ $1 = - ]]||exec<<<"$1";shift;c=;r(){ l=$c;IFS= read -rN1 c;};p()\
+{ printf %s "${o[@]}";};s(){ p=$1;[[ $p ]]||o=();while r;do [[ $p&&! $q ]]&&o+=\
+("$l");case $c in \\)r||break;[[ $p&&$q ]]||o+=("$l${c::!p}");;\")break;;*)[[ \
 $p ]]||o+=("$c");;esac;done;};co(){ n= b=1;while r;do [[ $q ]]||o+=("$l");case \
 $c in \")[[ $1||! $q ]]&&s 1||{ s;k=$(p);};;[|{)((b++));;]|\})((--b))||{ [[ $q \
 ]]&&exit 1;o+=("$c");break;};;:)[[ $1$b = 1&&$q&&$k = "$q" ]]&&break;;,)((0$1&&
