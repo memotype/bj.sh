@@ -1,0 +1,1167 @@
+version: 1
+
+report:
+  success: "PASS %{name}: %{description}"
+  failure: "FAIL %{name}: %{description}"
+
+fixtures:
+  nounset-values: '{"object":{"string":"value","number":42,"true":true,"false":false,"null":null,"array":[0,{"nested":"hit"}]}}'
+  empty-values: '{"empty_string":"","empty_object":{},"empty_array":[],"nothing":null}'
+  kubernetes: '{"items":[{"metadata":{"name":"api","annotations":{"example.com/config":"line1\nline2"}},"spec":{"nodeName":null,"containers":[{"name":"app","env":[{"name":"MODE","value":""}]}]}}]}'
+  cloud-init: '{"hostname":"node-01","enabled":true,"proxy":null,"ssh_authorized_keys":[],"write_files":[{"path":"/etc/app.conf","content":"mode=prod\nurl=https:\/\/example.test\/api"}]}'
+
+tests:
+  - name: top-level-string-value
+    description: selects a top-level string member
+    input:
+      json: '{"foo": "bar"}'
+    query: [foo]
+    expected:
+      output: 'bar'
+      status: 0
+
+  - name: nested-container-output
+    description: returns a selected object as JSON text
+    input:
+      json: '{"a": "b", "foo": {"bar": [1, 2, 3]}}'
+    query: [foo]
+    expected:
+      output: '{"bar": [1, 2, 3]}'
+      status: 0
+
+  - name: nested-object-value
+    description: traverses two object members
+    input:
+      json: '{"a": {"b": "c"}, "d": {"e": {"f": "g"}, "h": "i"}, "foo": {"bar": "baz"}}'
+    query: [foo, bar]
+    expected:
+      output: 'baz'
+      status: 0
+
+  - name: nested-array-negative-number
+    description: selects a negative number from a nested array
+    input:
+      json: |-
+        {"a": {"b": {"c" : ["d" , "e"]} } ,
+        "foo" : {"bar": [1.0, -2, 3e45] } }
+    query: [foo, bar, '1']
+    expected:
+      output: '-2'
+      status: 0
+
+  - name: insignificant-json-whitespace
+    description: ignores extensive whitespace while traversing JSON
+    input:
+      json: |2-
+          {   "a"
+        :  {
+        "b"  :   {  "c"  :  [  "d"  ,  "e"  ] , "e" : [ "f" , "g" ] } } ,
+        "foo" : {"bar":
+        [1, 2, 3] } }
+    query: [a, b, e, '1']
+    expected:
+      output: 'g'
+      status: 0
+
+  - name: all-json-whitespace-characters
+    description: accepts space tab carriage-return and line-feed whitespace
+    input:
+      json: "{\r\n\t\"a\"\t: \r1\n}"
+    query: [a]
+    expected:
+      output: '1'
+      status: 0
+
+  - name: nested-json-whitespace
+    description: accepts all JSON whitespace forms in nested containers
+    input:
+      json: "{\r\n\t\"outer\" : [\r\n\t{\"value\"\t:\r 42\n}\n]\r}"
+    query: [outer, '0', value]
+    expected:
+      output: '42'
+      status: 0
+
+  - name: nested-boolean-in-array
+    description: traverses an object and boolean nested in an array
+    input:
+      json: '  [  false, {"thing": [true, false]}]'
+    query: ['1', thing, '0']
+    expected:
+      output: 'true'
+      status: 0
+
+  - name: stdin-number-without-newline
+    description: reads a number from newline-free stdin
+    input:
+      json: '123'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: '123'
+      status: 0
+
+  - name: stdin-number-with-newline
+    description: reads a number from newline-terminated stdin
+    input:
+      json: '123'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: '123'
+      status: 0
+
+  - name: stdin-true-without-newline
+    description: reads true from newline-free stdin
+    input:
+      json: 'true'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: 'true'
+      status: 0
+
+  - name: stdin-true-with-newline
+    description: reads true from newline-terminated stdin
+    input:
+      json: 'true'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: 'true'
+      status: 0
+
+  - name: stdin-false-without-newline
+    description: reads false from newline-free stdin
+    input:
+      json: 'false'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: 'false'
+      status: 0
+
+  - name: stdin-false-with-newline
+    description: reads false from newline-terminated stdin
+    input:
+      json: 'false'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: 'false'
+      status: 0
+
+  - name: stdin-null-without-newline
+    description: reads null from newline-free stdin
+    input:
+      json: 'null'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: 'null'
+      status: 0
+
+  - name: stdin-null-with-newline
+    description: reads null from newline-terminated stdin
+    input:
+      json: 'null'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: 'null'
+      status: 0
+
+  - name: stdin-string-without-newline
+    description: reads a string from newline-free stdin
+    input:
+      json: '"string"'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: 'string'
+      status: 0
+
+  - name: stdin-string-with-newline
+    description: reads a string from newline-terminated stdin
+    input:
+      json: '"string"'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: 'string'
+      status: 0
+
+  - name: stdin-array-without-newline
+    description: reads an array from newline-free stdin
+    input:
+      json: '[1,2]'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: '[1,2]'
+      status: 0
+
+  - name: stdin-array-with-newline
+    description: reads an array from newline-terminated stdin
+    input:
+      json: '[1,2]'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: '[1,2]'
+      status: 0
+
+  - name: stdin-object-without-newline
+    description: reads an object from newline-free stdin
+    input:
+      json: '{"a":1}'
+      transport: stdin
+      trailing-newline: false
+    query: []
+    expected:
+      output: '{"a":1}'
+      status: 0
+
+  - name: stdin-object-with-newline
+    description: reads an object from newline-terminated stdin
+    input:
+      json: '{"a":1}'
+      transport: stdin
+      trailing-newline: true
+    query: []
+    expected:
+      output: '{"a":1}'
+      status: 0
+
+  - name: stdin-nested-query-without-newline
+    description: queries nested object input from newline-free stdin
+    input:
+      json: '{"metadata":{"name":"node-1"}}'
+      transport: stdin
+      trailing-newline: false
+    query: [metadata, name]
+    expected:
+      output: 'node-1'
+      status: 0
+
+  - name: stdin-nested-query-with-newline
+    description: queries nested object input from newline-terminated stdin
+    input:
+      json: '{"metadata":{"name":"node-1"}}'
+      transport: stdin
+      trailing-newline: true
+    query: [metadata, name]
+    expected:
+      output: 'node-1'
+      status: 0
+
+  - name: nounset-object-output
+    description: returns an object when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object]
+    shell: {nounset: true}
+    expected:
+      output: '{"string":"value","number":42,"true":true,"false":false,"null":null,"array":[0,{"nested":"hit"}]}'
+      status: 0
+
+  - name: nounset-string-output
+    description: returns a string when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, string]
+    shell: {nounset: true}
+    expected:
+      output: 'value'
+      status: 0
+
+  - name: nounset-number-output
+    description: returns a number when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, number]
+    shell: {nounset: true}
+    expected:
+      output: '42'
+      status: 0
+
+  - name: nounset-true-output
+    description: returns true when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, 'true']
+    shell: {nounset: true}
+    expected:
+      output: 'true'
+      status: 0
+
+  - name: nounset-false-output
+    description: returns false when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, 'false']
+    shell: {nounset: true}
+    expected:
+      output: 'false'
+      status: 0
+
+  - name: nounset-null-output
+    description: returns null when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, 'null']
+    shell: {nounset: true}
+    expected:
+      output: 'null'
+      status: 0
+
+  - name: nounset-array-output
+    description: returns an array when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, array]
+    shell: {nounset: true}
+    expected:
+      output: '[0,{"nested":"hit"}]'
+      status: 0
+
+  - name: nounset-nested-output
+    description: traverses nested containers when the caller has nounset enabled
+    input:
+      fixture: nounset-values
+    query: [object, array, '1', nested]
+    shell: {nounset: true}
+    expected:
+      output: 'hit'
+      status: 0
+
+  - name: nounset-missing-key
+    description: preserves nounset and reports a missing key
+    input:
+      fixture: nounset-values
+    query: [object, missing]
+    shell: {nounset: true}
+    expected:
+      output: ''
+      status: 1
+
+  - name: root-array-out-of-bounds
+    description: reports a missing root array index
+    input:
+      json: '[0, 1, 2, 3]'
+    query: ['4']
+    expected:
+      output: ''
+      status: 1
+
+  - name: nested-array-out-of-bounds
+    description: reports a missing nested array index
+    input:
+      json: '{"a": [0, 1, 2, 3]}'
+    query: [a, '4']
+    expected:
+      output: ''
+      status: 1
+
+  - name: valid-index-after-other-array
+    description: selects from the requested sibling array
+    input:
+      json: '{"a": [0, 1, 2], "b": [10, 11, 12]}'
+    query: [b, '1']
+    expected:
+      output: '11'
+      status: 0
+
+  - name: deeply-nested-array
+    description: traverses several nested array levels
+    input:
+      json: '{"a": [[0, 42], 1, [2, [3, 4]]]}'
+    query: [a, '2', '1', '1']
+    expected:
+      output: '4'
+      status: 0
+
+  - name: object-inside-array
+    description: selects an object member from an array element
+    input:
+      json: '[{"b": "c", "e": {"f": "g"}}, {"h": "i"}]'
+    query: ['1', h]
+    expected:
+      output: 'i'
+      status: 0
+
+  - name: closing-brace-inside-container-string
+    description: keeps a closing brace inside a selected object string
+    input:
+      json: '{"a":{"x":"b}c"}}'
+    query: [a]
+    expected:
+      output: '{"x":"b}c"}'
+      status: 0
+
+  - name: closing-bracket-inside-container-string
+    description: keeps a closing bracket inside a selected array string
+    input:
+      json: '{"a":["x]y"]}'
+    query: [a]
+    expected:
+      output: '["x]y"]'
+      status: 0
+
+  - name: comma-inside-array-string
+    description: ignores commas inside strings while indexing arrays
+    input:
+      json: '["a,b","c"]'
+    query: ['1']
+    expected:
+      output: 'c'
+      status: 0
+
+  - name: closing-bracket-inside-array-string
+    description: ignores closing brackets inside strings while indexing arrays
+    input:
+      json: '["a]b","c"]'
+    query: ['1']
+    expected:
+      output: 'c'
+      status: 0
+
+  - name: direct-key-after-nested-object
+    description: selects a direct key after a nested object with the same key
+    input:
+      json: '{"outer":{"target":"nested"},"target":"top"}'
+    query: [target]
+    expected:
+      output: 'top'
+      status: 0
+
+  - name: nested-object-key-is-not-direct
+    description: does not match a key found only inside a nested object
+    input:
+      json: '{"outer":{"target":"nested"},"other":0}'
+    query: [target]
+    expected:
+      output: ''
+      status: 1
+
+  - name: direct-key-after-object-array
+    description: selects a direct key after an array containing the same key
+    input:
+      json: '{"items":[{"target":"nested"}],"target":"top"}'
+    query: [target]
+    expected:
+      output: 'top'
+      status: 0
+
+  - name: object-array-key-is-not-direct
+    description: does not match a key found only in an object inside an array
+    input:
+      json: '{"items":[{"target":"nested"}],"other":0}'
+    query: [target]
+    expected:
+      output: ''
+      status: 1
+
+  - name: direct-key-before-nested-object
+    description: selects a direct key before a nested object with the same key
+    input:
+      json: '{"target":"top","outer":{"target":"nested"}}'
+    query: [target]
+    expected:
+      output: 'top'
+      status: 0
+
+  - name: direct-key-at-selected-depth
+    description: selects only the direct key at the requested object depth
+    input:
+      json: '{"level":{"child":{"target":"nested"},"target":"direct"}}'
+    query: [level, target]
+    expected:
+      output: 'direct'
+      status: 0
+
+  - name: string-scalar-before-sibling-stops-traversal
+    description: stops after selecting a string before a sibling
+    input:
+      json: '{"a":"x","b":"y"}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: string-scalar-after-sibling-stops-traversal
+    description: stops after selecting a string after a sibling
+    input:
+      json: '{"b":"y","a":"x"}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: number-scalar-before-sibling-stops-traversal
+    description: stops after selecting a number before a sibling
+    input:
+      json: '{"a":1,"b":2}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: number-scalar-after-sibling-stops-traversal
+    description: stops after selecting a number after a sibling
+    input:
+      json: '{"b":2,"a":1}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: true-scalar-before-sibling-stops-traversal
+    description: stops after selecting true before a sibling
+    input:
+      json: '{"a":true,"b":false}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: true-scalar-after-sibling-stops-traversal
+    description: stops after selecting true after a sibling
+    input:
+      json: '{"b":false,"a":true}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: false-scalar-before-sibling-stops-traversal
+    description: stops after selecting false before a sibling
+    input:
+      json: '{"a":false,"b":true}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: false-scalar-after-sibling-stops-traversal
+    description: stops after selecting false after a sibling
+    input:
+      json: '{"b":true,"a":false}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: null-scalar-before-sibling-stops-traversal
+    description: stops after selecting null before a sibling
+    input:
+      json: '{"a":null,"b":0}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: null-scalar-after-sibling-stops-traversal
+    description: stops after selecting null after a sibling
+    input:
+      json: '{"b":0,"a":null}'
+    query: [a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: first-array-scalar-stops-traversal
+    description: stops after selecting the first scalar array element
+    input:
+      json: '[1,2]'
+    query: ['0', extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: later-array-scalar-stops-traversal
+    description: stops after selecting a later scalar array element
+    input:
+      json: '[1,2]'
+    query: ['1', extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: nested-number-stops-traversal
+    description: stops after selecting a scalar in a nested object
+    input:
+      json: '{"outer":{"a":1,"b":2}}'
+    query: [outer, a, extra]
+    expected:
+      output: ''
+      status: 1
+
+  - name: scalar-with-multiple-remaining-terms
+    description: stops at a scalar even with several remaining query terms
+    input:
+      json: '{"a":1,"b":2}'
+    query: [a, extra, more]
+    expected:
+      output: ''
+      status: 1
+
+  - name: exponent-number-output
+    description: returns a number with a decimal exponent
+    input:
+      json: '[0, -1, 4.2e10]'
+    query: ['2']
+    expected:
+      output: '4.2e10'
+      status: 0
+
+  - name: negative-number-output
+    description: returns a negative integer
+    input:
+      json: '[0, -1, 4.2e10]'
+    query: ['1']
+    expected:
+      output: '-1'
+      status: 0
+
+  - name: signed-exponent-output
+    description: returns a number with an explicitly signed exponent
+    input:
+      json: '[1e+2]'
+    query: ['0']
+    expected:
+      output: '1e+2'
+      status: 0
+
+  - name: array-iteration-values-and-terminal-status
+    description: iterates all array values and stops with missing-index status
+    operation: iterate
+    input:
+      json: '{"a": [42, 69, 420]}'
+    query: [a]
+    expected:
+      output: ['42', '69', '420']
+      status: 1
+
+  - name: closing-brace-inside-key
+    description: queries an object key containing a closing brace
+    input:
+      json: '{"foo": {"b}ar": "baz"}}'
+    query: [foo, 'b}ar']
+    expected:
+      output: 'baz'
+      status: 0
+
+  - name: closing-brace-inside-value
+    description: returns a string containing a closing brace
+    input:
+      json: '{"foo": {"bar": "b}az"}}'
+    query: [foo, bar]
+    expected:
+      output: 'b}az'
+      status: 0
+
+  - name: escaped-quote-preserved
+    description: preserves an escaped quote spelling
+    input:
+      json: '{"value":"a\"b"}'
+    query: [value]
+    expected:
+      output: 'a\"b'
+      status: 0
+
+  - name: escaped-backslash-preserved
+    description: preserves an escaped backslash spelling
+    input:
+      json: '{"value":"a\\b"}'
+    query: [value]
+    expected:
+      output: 'a\\b'
+      status: 0
+
+  - name: escaped-solidus-preserved
+    description: preserves an escaped solidus spelling
+    input:
+      json: '{"value":"a\/b"}'
+    query: [value]
+    expected:
+      output: 'a\/b'
+      status: 0
+
+  - name: escaped-backspace-preserved
+    description: preserves an escaped backspace spelling
+    input:
+      json: '{"value":"a\bb"}'
+    query: [value]
+    expected:
+      output: 'a\bb'
+      status: 0
+
+  - name: escaped-form-feed-preserved
+    description: preserves an escaped form-feed spelling
+    input:
+      json: '{"value":"a\fb"}'
+    query: [value]
+    expected:
+      output: 'a\fb'
+      status: 0
+
+  - name: escaped-newline-preserved
+    description: preserves an escaped newline spelling
+    input:
+      json: '{"value":"a\nb"}'
+    query: [value]
+    expected:
+      output: 'a\nb'
+      status: 0
+
+  - name: escaped-carriage-return-preserved
+    description: preserves an escaped carriage-return spelling
+    input:
+      json: '{"value":"a\rb"}'
+    query: [value]
+    expected:
+      output: 'a\rb'
+      status: 0
+
+  - name: escaped-tab-preserved
+    description: preserves an escaped tab spelling
+    input:
+      json: '{"value":"a\tb"}'
+    query: [value]
+    expected:
+      output: 'a\tb'
+      status: 0
+
+  - name: stdin-escaped-newline-without-newline
+    description: preserves escaped newlines from newline-free stdin
+    input:
+      json: '{"value":"line1\nline2"}'
+      transport: stdin
+      trailing-newline: false
+    query: [value]
+    expected:
+      output: 'line1\nline2'
+      status: 0
+
+  - name: stdin-escaped-newline-with-newline
+    description: preserves escaped newlines from newline-terminated stdin
+    input:
+      json: '{"value":"line1\nline2"}'
+      transport: stdin
+      trailing-newline: true
+    query: [value]
+    expected:
+      output: 'line1\nline2'
+      status: 0
+
+  - name: escaped-structural-text-preserved
+    description: keeps escaped and structural characters inside a string
+    input:
+      json: '{"outer":{"value":"x\"}y,]z:{","after":1}}'
+    query: [outer, value]
+    expected:
+      output: 'x\"}y,]z:{'
+      status: 0
+
+  - name: raw-utf8-value-round-trips
+    description: returns raw UTF-8 text unchanged
+    input:
+      json: '{"raw":"café 雪 🚀"}'
+    query: [raw]
+    expected:
+      output: 'café 雪 🚀'
+      status: 0
+
+  - name: raw-utf8-key-is-queryable
+    description: matches a raw UTF-8 object key
+    input:
+      json: '{"café 雪":"value"}'
+    query: ['café 雪']
+    expected:
+      output: 'value'
+      status: 0
+
+  - name: escaped-bmp-spelling-preserved
+    description: preserves escaped BMP code-point spellings
+    input:
+      json: '{"escaped":"caf\u00e9 \u96ea"}'
+    query: [escaped]
+    expected:
+      output: 'caf\u00e9 \u96ea'
+      status: 0
+
+  - name: escaped-surrogate-pair-preserved
+    description: preserves an escaped Unicode surrogate-pair spelling
+    input:
+      json: '{"emoji":"\uD83D\uDE80"}'
+    query: [emoji]
+    expected:
+      output: '\uD83D\uDE80'
+      status: 0
+
+  - name: escaped-key-spelling-is-queryable
+    description: matches an object key by its escaped spelling
+    input:
+      json: '{"\u0061":42}'
+    query: ['\u0061']
+    expected:
+      output: '42'
+      status: 0
+
+  - name: decoded-key-does-not-match-escaped-key
+    description: keeps escaped and decoded-equivalent key spellings distinct
+    input:
+      json: '{"\u0061":42}'
+    query: [a]
+    expected:
+      output: ''
+      status: 1
+
+  - name: nul-escape-spelling-preserved
+    description: preserves a NUL escape spelling without decoding it
+    input:
+      json: '{"nul":"\u0000"}'
+    query: [nul]
+    expected:
+      output: '\u0000'
+      status: 0
+
+  - name: skipped-string-escape-pair
+    description: recognizes a complete escape pair while skipping a string
+    input:
+      json: '{"skip":"\\","target":"hit"}'
+    query: [target]
+    expected:
+      output: 'hit'
+      status: 0
+
+  - name: selected-container-preserves-escapes
+    description: preserves escape spellings in a selected container
+    input:
+      json: '{"outer":{"slash":"\\","value":"line1\nline2"}}'
+    query: [outer]
+    expected:
+      output: '{"slash":"\\","value":"line1\nline2"}'
+      status: 0
+
+  - name: empty-string-output
+    description: distinguishes a selected empty string from a missing value
+    input:
+      fixture: empty-values
+    query: [empty_string]
+    expected:
+      output: ''
+      status: 0
+
+  - name: empty-object-output
+    description: returns an empty selected object
+    input:
+      fixture: empty-values
+    query: [empty_object]
+    expected:
+      output: '{}'
+      status: 0
+
+  - name: empty-array-output
+    description: returns an empty selected array
+    input:
+      fixture: empty-values
+    query: [empty_array]
+    expected:
+      output: '[]'
+      status: 0
+
+  - name: null-output
+    description: returns a selected null value
+    input:
+      fixture: empty-values
+    query: [nothing]
+    expected:
+      output: 'null'
+      status: 0
+
+  - name: absent-key-in-empty-values
+    description: reports an absent member among empty values
+    input:
+      fixture: empty-values
+    query: [absent]
+    expected:
+      output: ''
+      status: 1
+
+  - name: root-empty-object-output
+    description: returns a root empty object without a query
+    input:
+      json: '{}'
+    query: []
+    expected:
+      output: '{}'
+      status: 0
+
+  - name: root-empty-array-output
+    description: returns a root empty array without a query
+    input:
+      json: '[]'
+    query: []
+    expected:
+      output: '[]'
+      status: 0
+
+  - name: navigate-past-empty-containers
+    description: navigates past empty sibling containers
+    input:
+      json: '{"a":{},"b":[],"c":{"result":"hit"}}'
+    query: [c, result]
+    expected:
+      output: 'hit'
+      status: 0
+
+  - name: multi-digit-array-index
+    description: selects an array element using a multi-digit index
+    input:
+      json: '[0,1,2,3,4,5,6,7,8,9,{"result":"hit"}]'
+    query: ['10', result]
+    expected:
+      output: 'hit'
+      status: 0
+
+  - name: navigate-array-past-empty-containers
+    description: selects after empty object and array elements
+    input:
+      json: '[{},[],{"result":"hit"}]'
+    query: ['2', result]
+    expected:
+      output: 'hit'
+      status: 0
+
+  - name: empty-query-at-root-empty-key
+    description: rejects an empty root query term even when an empty key exists
+    input:
+      json: '{"":42}'
+    query: ['']
+    expected:
+      output: ''
+      status: 2
+
+  - name: empty-query-at-nested-empty-key
+    description: rejects an empty nested query term
+    input:
+      json: '{"outer":{"":"value"}}'
+    query: [outer, '']
+    expected:
+      output: ''
+      status: 2
+
+  - name: empty-query-before-valid-term
+    description: rejects an empty query before a valid term
+    input:
+      json: '{"outer":{"leaf":1}}'
+    query: ['', outer]
+    expected:
+      output: ''
+      status: 2
+
+  - name: empty-query-between-valid-terms
+    description: rejects an empty query between valid terms
+    input:
+      json: '{"outer":{"leaf":1}}'
+    query: [outer, '', leaf]
+    expected:
+      output: ''
+      status: 2
+
+  - name: empty-query-after-valid-path
+    description: rejects an empty query after a valid path
+    input:
+      json: '{"outer":{"leaf":1}}'
+    query: [outer, leaf, '']
+    expected:
+      output: ''
+      status: 2
+
+  - name: missing-key-before-empty-query
+    description: reports the earlier missing key before reaching an empty term
+    input:
+      json: '{"outer":{"leaf":1}}'
+    query: [missing, '']
+    expected:
+      output: ''
+      status: 1
+
+  - name: nonempty-key-beside-empty-key
+    description: selects a supported nonempty key beside an empty key
+    input:
+      json: '{"":42,"normal":7}'
+    query: [normal]
+    expected:
+      output: '7'
+      status: 0
+
+  - name: object-with-empty-key-output
+    description: returns an object containing an empty key without querying it
+    input:
+      json: '{"":42}'
+    query: []
+    expected:
+      output: '{"":42}'
+      status: 0
+
+  - name: selected-empty-string-success
+    description: returns success with empty output for a selected empty string
+    input:
+      json: '{"value":""}'
+    query: [value]
+    expected:
+      output: ''
+      status: 0
+
+  - name: kubernetes-metadata-name
+    description: selects a metadata name from Kubernetes-shaped data
+    input:
+      fixture: kubernetes
+    query: [items, '0', metadata, name]
+    expected:
+      output: 'api'
+      status: 0
+
+  - name: kubernetes-annotation-escape
+    description: preserves an escaped newline in a Kubernetes annotation
+    input:
+      fixture: kubernetes
+    query: [items, '0', metadata, annotations, example.com/config]
+    expected:
+      output: 'line1\nline2'
+      status: 0
+
+  - name: kubernetes-container-name
+    description: selects a nested Kubernetes container name
+    input:
+      fixture: kubernetes
+    query: [items, '0', spec, containers, '0', name]
+    expected:
+      output: 'app'
+      status: 0
+
+  - name: kubernetes-empty-env-value
+    description: returns a nested empty Kubernetes environment value
+    input:
+      fixture: kubernetes
+    query: [items, '0', spec, containers, '0', env, '0', value]
+    expected:
+      output: ''
+      status: 0
+
+  - name: kubernetes-null-node-name
+    description: returns a null Kubernetes node name
+    input:
+      fixture: kubernetes
+    query: [items, '0', spec, nodeName]
+    expected:
+      output: 'null'
+      status: 0
+
+  - name: kubernetes-missing-key
+    description: reports a missing key in Kubernetes-shaped data
+    input:
+      fixture: kubernetes
+    query: [absent]
+    expected:
+      output: ''
+      status: 1
+
+  - name: cloud-init-hostname
+    description: selects a cloud-init hostname
+    input:
+      fixture: cloud-init
+    query: [hostname]
+    expected:
+      output: 'node-01'
+      status: 0
+
+  - name: cloud-init-boolean
+    description: selects a cloud-init boolean
+    input:
+      fixture: cloud-init
+    query: [enabled]
+    expected:
+      output: 'true'
+      status: 0
+
+  - name: cloud-init-null
+    description: selects a cloud-init null value
+    input:
+      fixture: cloud-init
+    query: [proxy]
+    expected:
+      output: 'null'
+      status: 0
+
+  - name: cloud-init-empty-array
+    description: selects an empty cloud-init array
+    input:
+      fixture: cloud-init
+    query: [ssh_authorized_keys]
+    expected:
+      output: '[]'
+      status: 0
+
+  - name: cloud-init-file-path
+    description: selects a cloud-init write-files path
+    input:
+      fixture: cloud-init
+    query: [write_files, '0', path]
+    expected:
+      output: '/etc/app.conf'
+      status: 0
+
+  - name: cloud-init-file-content
+    description: preserves escaped content in cloud-init data
+    input:
+      fixture: cloud-init
+    query: [write_files, '0', content]
+    expected:
+      output: 'mode=prod\nurl=https:\/\/example.test\/api'
+      status: 0
+
+  - name: cloud-init-missing-key
+    description: reports a missing key in cloud-init data
+    input:
+      fixture: cloud-init
+    query: [absent]
+    expected:
+      output: ''
+      status: 1
+
+  - name: timing-large-fixture-argument
+    description: checks the known citylots result using argument input
+    input:
+      file: citylots.json
+      transport: argument
+    query: [features, '1000', geometry, coordinates, '0', '0', '1']
+    tags: [timing]
+    expected:
+      output: '37.805335380794915'
+      status: 0
+
+  - name: timing-large-fixture-stdin
+    description: checks the known citylots result using stdin
+    input:
+      file: citylots.json
+      transport: stdin
+    query: [features, '1000', geometry, coordinates, '0', '0', '1']
+    tags: [timing]
+    expected:
+      output: '37.805335380794915'
+      status: 0

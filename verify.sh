@@ -9,13 +9,14 @@ fail() {
 
 generated=(bj-1line.sh bj-80-col.sh bj-90-col.sh)
 implementations=(bj.sh "${generated[@]}")
-executables=(bj.sh test.sh verify.sh rollup.rb linebreak.rb "${generated[@]}")
+executables=(bj.sh test.rb verify.sh rollup.rb linebreak.rb "${generated[@]}")
 
 echo "Checking syntax and executable modes"
-bash -n bj.sh test.sh verify.sh "${generated[@]}" \
+bash -n bj.sh verify.sh "${generated[@]}" \
   || fail "Bash syntax check failed"
 ruby -c rollup.rb || fail "rollup.rb syntax check failed"
 ruby -c linebreak.rb || fail "linebreak.rb syntax check failed"
+ruby -c test.rb || fail "test.rb syntax check failed"
 
 for file in "${executables[@]}"; do
   [[ -x $file ]] || fail "$file is not executable"
@@ -90,7 +91,7 @@ run_functional_tests() {
 
   echo "Functional tests ($label)"
   for implementation in "${implementations[@]}"; do
-    "$@" ./test.sh -s "./$implementation" \
+    "$@" ./test.rb -s "./$implementation" \
       || fail "$implementation failed under $label"
   done
 }
