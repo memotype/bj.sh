@@ -2,10 +2,10 @@
 bj()(set +u;[[ $1 = - ]]||exec<<<"$1";shift;r(){ l=$c;IFS= read -rN1 c;};p(){ \
 printf %s "${o[@]}";};s(){ [[ $1 ]]||o=();while r;do [[ $1&&! $q ]]&&o+=("$l")
 case $c in \\)r||break;[[ $1&&$q ]]||o+=("$l${c::!0$1}");;\")break;;*)[[ $1 ]]||
-o+=("$c");;esac;done;};k(){ n= b=1;while r;do [[ $q ]]||o+=("$l");case $c in \")
+o+=("$c");;esac;done;};g(){ n= b=1;while r;do [[ $q ]]||o+=("$l");case $c in \")
 [[ $1||! $q ]]&&s 1||{ s;k=$(p);};;[|{)((b++));;]|\})((--b))||{ [[ $q ]]&&exit 1
 o+=("$c");break;};;:)[[ $1$b = 1&&$q&&$k = "$q" ]]&&break;;,)((0$1&&b==1))&&[[ \
 $q = $((++n)) ]]&&break;;esac;done;};for q in "$@" "";do shift&&[[ ! $q ]]&&
 return 2;x=0;o=();while r;do case $q$c in *[[:space:]])! :;;\")s;;[tfn0-9-])
-while o+=("$c")&&r&&[[ $c =~ [-+.0-9Ea-z] ]];do :;done;;*{)k;;*[)[[ $q = 0 ]]||
-k 1;;?)return 2;;*)return 1;;esac&&x=1&&break;done;done;p;((x));)
+while o+=("$c")&&r&&[[ $c =~ [-+.0-9Ea-z] ]];do :;done;;*{)g;;*[)[[ $q = 0 ]]||
+g 1;;?)return 2;;*)return 1;;esac&&x=1&&break;done;done;p;((x));)

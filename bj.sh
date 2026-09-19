@@ -49,9 +49,9 @@ bj() (
     done
   }
 
-  # Scan a "k"olection (list or object). $1 is set when scanning a list.
-  k() {
-    : : "=== co()"
+  # Scan a "g"roup (list or object). $1 is set when scanning a list.
+  g() {
+    : : "=== g()"
     n= b=1
     while r; do
       : : "--- l=$l= c=$c= q=$q= b=$b= ---"
@@ -98,8 +98,8 @@ bj() (
             && [[ $c =~ [-+.0-9Ea-z] ]]
           do :;done
         ;;
-        *{) k ;;
-        *[) [[ $q = 0 ]] || k 1 ;; #])
+        *{) g ;;
+        *[) [[ $q = 0 ]] || g 1 ;; #])
         ?) return 2 ;;
         *) return 1 ;;
       esac && x=1 && break
