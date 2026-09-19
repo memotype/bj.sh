@@ -1,4 +1,4 @@
-#!/usr/bin/ruby -w
+#!/usr/bin/env -S ruby -w
 
 # Return safe physical breakpoints in compact Bash produced by rollup.rb. Each
 # entry contains the end of the current line, the start of the next, and any

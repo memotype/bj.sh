@@ -16,9 +16,6 @@ bj() (
   # o="array of 'output' characters, to be joined later (array append + printf
   # is faster than appending to a string one character at a time)"
 
-  # c needs to be initialized because we do l=$c before our first read
-  c=
-
   # Read a character
   r() {
     l=$c
@@ -36,25 +33,24 @@ bj() (
   # Scan strings, saving to $o unless navigation only needs to skip them.
   s() {
     : : "=== s()"
-    p=$1
-    [[ $p ]] || o=()
+    [[ $1 ]] || o=()
     while r; do
       : : "--- lc=$l$c="
-      [[ $p && ! $q ]] && o+=("$l")
+      [[ $1 && ! $q ]] && o+=("$l")
       case $c in
         \\)
           r || break
           # Skip while navigating. Otherwise include $c only when capturing.
-          [[ $p && $q ]] || o+=("$l${c::!p}")
+          [[ $1 && $q ]] || o+=("$l${c::!0$1}")
         ;;
         \") break ;;
-        *) [[ $p ]] || o+=("$c") ;;
+        *) [[ $1 ]] || o+=("$c") ;;
       esac
     done
   }
 
-  # Scan an object or list. $1 is set when scanning a list.
-  co() {
+  # Scan a "k"olection (list or object). $1 is set when scanning a list.
+  k() {
     : : "=== co()"
     n= b=1
     while r; do
@@ -102,8 +98,8 @@ bj() (
             && [[ $c =~ [-+.0-9Ea-z] ]]
           do :;done
         ;;
-        *{) co ;;
-        *[) [[ $q = 0 ]] || co 1 ;; #])
+        *{) k ;;
+        *[) [[ $q = 0 ]] || k 1 ;; #])
         ?) return 2 ;;
         *) return 1 ;;
       esac && x=1 && break
