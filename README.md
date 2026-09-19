@@ -87,7 +87,11 @@ specific implementation with:
 
     ./test.rb -s ./bj.sh
 
-Optional timing cases require `citylots.json` and are included with `-t`.
+Optional timing cases require
+[`citylots.json`](https://github.com/zemirco/sf-city-lots-json) and are included
+with `-t`. The `citylots.json` is not included in this repo due to it's sheer
+size.
+
 Repository-level verification, including every generated implementation under
 the default locale and `LC_ALL=C`, is run with:
 
