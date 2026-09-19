@@ -1,4 +1,4 @@
-[![Yes, this bizarre 863-byte Bash JSON parser is actually tested.](https://github.com/memotype/bj.sh/actions/workflows/verify.yml/badge.svg)](https://github.com/memotype/bj.sh/actions/workflows/verify.yml)
+[![Yes, this bizarre tiny Bash JSON parser is actually tested.](https://github.com/memotype/bj.sh/actions/workflows/verify.yml/badge.svg)](https://github.com/memotype/bj.sh/actions/workflows/verify.yml)
 
 bj.sh is a pure GNU Bash library for parsing JSON data.
 It requires GNU Bash 4.1 or newer.
@@ -45,7 +45,11 @@ QUERY terms are the keys and indexes you want to query from the JSON data.
     r=$(curl https://myapi.example.com/api/call | bj - nodes 0)
 
 Assuming the api call returns something like `{"nodes": ["node0", "node1"]}`,
-this will set `r` to `node0`. To get the list of nodes and iterate over them:
+this will set `r` to `node0`.
+
+### Loops
+
+To get the list of nodes and iterate over them:
 
     nodes=$(curl https://myapi.example.com/api/call | bj - nodes)
     i=0
