@@ -87,8 +87,8 @@ specific implementation with:
 
     ./test.rb -s ./bj.sh
 
-Optional timing cases require
-[`citylots.json`](https://github.com/zemirco/sf-city-lots-json) and are included
+Optional performance and timing cases require
+[`citylots.json`](https://github.com/zemirco/sf-city-lots-json) and are called
 with `-t`. The `citylots.json` is not included in this repo due to it's sheer
 size.
 
