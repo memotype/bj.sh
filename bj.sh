@@ -80,7 +80,7 @@ bj() (
   }
 
   # Main - scan input for query terms
-  for q in "$@" ""; do
+  for q in "$@" "";{
     shift && [[ ! $q ]] && return 2
     # x="success"
     x=0
@@ -104,7 +104,7 @@ bj() (
         *) return 1 ;;
       esac && x=1 && break
     done
-  done
+  }
 
   # Print whatever we last stored in $o
   p

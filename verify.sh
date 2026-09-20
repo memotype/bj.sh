@@ -129,6 +129,22 @@ check_catalog_rejected unsupported-tag \
   '    tags: [timing]' '    tags: [benchmark]' \
   'timing-large-fixture-argument: unsupported tags "benchmark"'
 
+echo "Checking brace-form loop rollup"
+brace_loop_source="$verify_dir/brace-loop.sh"
+brace_loop_rolled="$verify_dir/brace-loop-rolled.sh"
+printf '%s\n' \
+  'for value in "$@" "";{' \
+  '  printf "<%s>\n" "$value"' \
+  '}' \
+  > "$brace_loop_source"
+./rollup.rb "$brace_loop_source" "$brace_loop_rolled" \
+  || fail "Could not roll up brace-form loop"
+bash -n "$brace_loop_rolled" \
+  || fail "Rolled brace-form loop failed Bash syntax check"
+output=$(bash "$brace_loop_rolled" alpha beta)
+[[ $output = $'<alpha>\n<beta>\n<>' ]] \
+  || fail "Rolled brace-form loop changed execution behavior"
+
 echo "Checking generated files"
 ./rollup.rb bj.sh "$verify_dir/bj-1line.sh" \
   || fail "Could not regenerate bj-1line.sh"
